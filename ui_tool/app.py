@@ -319,6 +319,40 @@ def main():
             color = gemini.get("text_color", "#000000")
             canvas_box_h = bbox["height"] * scale_y
             canvas_box_w = bbox["width"] * scale_x
+            
+            # --- DEBUG INFO FOR FIRST TEXT ---
+            if i == 0:
+                with st.sidebar.expander("🕵️‍♀️ Font Debug (Region #1)", expanded=False):
+                    st.write(f"**Font Path**: `{FONT_PATH}`")
+                    st.write(f"**Exists**: `{FONT_PATH.exists()}`")
+                    
+                    # Test Calculation
+                    try:
+                        test_font = ImageFont.truetype(str(FONT_PATH), 10)
+                        st.success("Font loaded successfully!")
+                    except Exception as e:
+                        st.error(f"Font load failed: {e}")
+                    
+                    st.write(f"**Box**: {canvas_box_w:.1f} x {canvas_box_h:.1f}")
+                    st.write(f"**Text**: '{orig_text[:20]}...'")
+                    
+                    # Manual Calc Trace
+                    calc_size = calculate_font_size(orig_text, canvas_box_h, canvas_box_w)
+                    st.write(f"-> **Calculated Size**: {calc_size}")
+                    
+                    # Check metrics at this size
+                    try:
+                        f = ImageFont.truetype(str(FONT_PATH), calc_size)
+                        l, t, r, b = f.getbbox(orig_text)
+                        w = r - l
+                        h = b - t
+                        st.write(f"**Metrics**: {w:.1f} x {h:.1f}")
+                        st.write(f"**Width Util**: {w/canvas_box_w*100:.1f}%")
+                        st.write(f"**Height Util**: {h/canvas_box_h*100:.1f}%")
+                    except:
+                        pass
+            # ---------------------------------
+
             font_size = calculate_font_size(orig_text, canvas_box_h, canvas_box_w)
             
             base_objects.append({
