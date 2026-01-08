@@ -1,9 +1,12 @@
 # CRAFT Text Detection MVP
 # Install these dependencies first
 
+# Fix for Python 3.12+ distutils removal
+setuptools
+# Force newer opencv with wheels for Py3.13 to avoid build failure
+opencv-python>=4.10.0
 craft-text-detector==0.4.3
-opencv-python-headless>=4.5.0
-numpy>=1.19.0
+numpy>=1.21.0
 Pillow>=8.0.0
 torch>=1.7.0
 torchvision>=0.8.0
