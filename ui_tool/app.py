@@ -633,12 +633,14 @@ def main():
         else:
             st.warning("No final_composed.png found. Click 'Re-render with Edits' to generate.")
     
-    # --- CANVA-STYLE EDITOR ---
+    # --- INTERACTIVE EDITOR (Pipeline Output + Positioning Overlays) ---
     st.markdown("---")
     st.subheader("🎨 Interactive Editor")
     
-    # Prepare text objects for canvas (scaled to display size)
-    canvas_text_objects = []
+    st.info("💡 The image below is your exact pipeline output. Drag the colored boxes to reposition text, then click 'Apply & Re-render'.")
+    
+    # Prepare positioning overlay rectangles (just for dragging, no text rendering)
+    positioning_boxes = []
     for region in text_regions:
         gemini = region.get("gemini_analysis", {})
         if not gemini:
@@ -659,14 +661,20 @@ def main():
         
         rid = region.get("id")
         bbox = region["bbox"]
-        text = gemini.get("text", "")
-        color = gemini.get("text_color", "#000000")
-        font_name = gemini.get("primary_font", "Roboto")
-        font_weight = gemini.get("font_weight", 400)
+        
+        # Color code by role
+        role_colors = {
+            "heading": "rgba(231, 76, 60, 0.5)",  # Red
+            "subheading": "rgba(52, 152, 219, 0.5)",  # Blue
+            "body": "rgba(46, 204, 113, 0.5)",  # Green
+            "cta": "rgba(241, 196, 15, 0.5)",  # Yellow
+            "usp": "rgba(155, 89, 182, 0.5)",  # Purple
+        }
+        fill_color = role_colors.get(role, "rgba(149, 165, 166, 0.5)")
         
         # Scale to canvas coordinates
-        canvas_text_objects.append({
-            "type": "textbox",
+        positioning_boxes.append({
+            "type": "rect",
             "version": "4.4.0",
             "originX": "left",
             "originY": "top",
@@ -674,61 +682,119 @@ def main():
             "top": bbox["y"] * scale_y,
             "width": bbox["width"] * scale_x,
             "height": bbox["height"] * scale_y,
-            "text": text,
-            "fontSize": int(bbox["height"] * scale_y * 0.7),  # Approximate
-            "fontFamily": font_name,
-            "fontWeight": font_weight,
-            "fill": color,
-            "editable": True,
+            "fill": fill_color,
+            "stroke": "#e74c3c",
+            "strokeWidth": 2,
             "selectable": True,
-            "u_id": f"text_{rid}",
+            "u_id": f"box_{rid}",
         })
     
-    # Inject CSS to set background image on canvas
-    if final_composed_path and final_composed_path.exists():
-        import base64
-        with open(final_composed_path, "rb") as img_file:
-            img_b64 = base64.b64encode(img_file.read()).decode()
+    # Show pipeline output with positioning overlays
+    col_canvas, col_controls = st.columns([4, 1])
+    
+    with col_canvas:
+        # Use final_composed.png as background via CSS
+        if final_composed_path and final_composed_path.exists():
+            import base64
+            with open(final_composed_path, "rb") as img_file:
+                img_b64 = base64.b64encode(img_file.read()).decode()
+            
+            st.markdown(f'''
+            <style>
+                [data-testid="stCanvas"] canvas {{
+                    background-image: url("data:image/png;base64,{img_b64}") !important;
+                    background-size: contain !important;
+                    background-repeat: no-repeat !important;
+                    background-position: center !important;
+                }}
+            </style>
+            ''', unsafe_allow_html=True)
         
-        # CSS to overlay image as canvas background
-        st.markdown(f'''
-        <style>
-            /* Target the canvas container and set background */
-            .stCanvas > div > canvas {{
-                background-image: url("data:image/png;base64,{img_b64}") !important;
-                background-size: contain !important;
-                background-repeat: no-repeat !important;
-                background-position: center !important;
-            }}
-            /* Also target by key if possible */
-            [data-testid="stCanvas"] canvas {{
-                background-image: url("data:image/png;base64,{img_b64}") !important;
-                background-size: contain !important;
-            }}
-        </style>
-        ''', unsafe_allow_html=True)
-    
-    col1, col2 = st.columns([5, 1])
-    
-    with col1:
         c_key = f"canvas_{selected_run_id}_v{st.session_state.canvas_version}"
         
         canvas_result = st_canvas(
             fill_color="rgba(255, 165, 0, 0.3)",
             stroke_width=2,
             stroke_color="#e74c3c",
-            background_color="transparent",  # Let CSS handle background
+            background_color="transparent",
             update_streamlit=True,
             height=canvas_height,
             width=canvas_width,
             drawing_mode="transform",
-            initial_drawing={"version": "4.4.0", "objects": canvas_text_objects},
+            initial_drawing={"version": "4.4.0", "objects": positioning_boxes},
             key=c_key,
         )
         
-        # Save state for position tracking
+        # Save state
         if canvas_result.json_data:
             st.session_state.last_canvas_state = canvas_result.json_data
+    
+    with col_controls:
+        st.markdown("### Controls")
+        
+        # Apply positions button
+        if st.button("📐 Apply & Re-render", type="primary"):
+            if canvas_result.json_data and run_dir:
+                # Extract new positions from canvas
+                canvas_objects = canvas_result.json_data.get("objects", [])
+                position_updates = {}
+                
+                for obj in canvas_objects:
+                    if obj.get("type") == "rect":
+                        # Extract region ID from u_id
+                        u_id = obj.get("u_id", "")
+                        if u_id.startswith("box_"):
+                            rid = u_id.replace("box_", "")
+                            # Scale back to original coordinates
+                            position_updates[rid] = {
+                                "x": int(obj["left"] / scale_x),
+                                "y": int(obj["top"] / scale_y),
+                                "width": int(obj["width"] * obj.get("scaleX", 1) / scale_x),
+                                "height": int(obj["height"] * obj.get("scaleY", 1) / scale_y)
+                            }
+                
+                # Update report with new positions
+                report_path = Path(run_dir) / "pipeline_report_with_boxes.json"
+                if not report_path.exists():
+                    report_path = Path(run_dir) / "pipeline_report.json"
+                
+                if report_path.exists():
+                    with open(report_path, "r") as f:
+                        updated_report = json.load(f)
+                    
+                    # Apply position updates
+                    for region in updated_report.get("text_detection", {}).get("regions", []):
+                        rid = str(region.get("id"))
+                        if rid in position_updates:
+                            region["bbox"] = position_updates[rid]
+                    
+                    # Save updated report
+                    with open(report_path, "w") as f:
+                        json.dump(updated_report, f, indent=2)
+                    
+                    # Re-render with pipeline
+                    with st.spinner("Re-rendering with new positions..."):
+                        # Also apply text edits if any
+                        text_edit_updates = {}
+                        for key, value in text_updates.items():
+                            rid = key.replace("text_", "")
+                            text_edit_updates[rid] = value
+                        
+                        rendered_img = backend.render_with_pipeline(run_dir, text_edit_updates)
+                        if rendered_img:
+                            st.success("✅ Re-rendered with new positions!")
+                            st.session_state.canvas_version += 1
+                            st.rerun()
+                        else:
+                            st.error("Rendering failed")
+        
+        st.markdown("---")
+        st.markdown("### Legend")
+        st.markdown("🔴 Red = Heading")
+        st.markdown("🔵 Blue = Subheading")
+        st.markdown("🟢 Green = Body")
+        st.markdown("🟡 Yellow = CTA")
+        st.markdown("🟣 Purple = USP")
             
         with col2:
             st.subheader("Data Inspector")
