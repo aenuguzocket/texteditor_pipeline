@@ -97,13 +97,30 @@ def get_font_path(font_name: str, font_weight: int) -> str:
         variant = str(font_weight)
 
     if variant not in files:
-        # Try to find closest available weight? 
-        # For now, simplistic fallback
-        if "regular" in files:
-            variant = "regular"
+        # Smart Weight Fallback: Find the closest available weight
+        # Parse available weights from file keys
+        available_weights = []
+        for key in files.keys():
+            if key == "regular":
+                available_weights.append(400)
+            elif key.isdigit():
+                available_weights.append(int(key))
+            # Skip italic variants for now
+        
+        if available_weights:
+            # Find closest weight, preferring heavier if equidistant
+            closest_weight = min(available_weights, key=lambda w: (abs(w - font_weight), -w))
+            
+            if closest_weight == 400:
+                variant = "regular"
+            else:
+                variant = str(closest_weight)
+            
+            print(f"  [Font] Requested weight {font_weight} not found. Using closest: {closest_weight}")
         else:
-            # Pick first available
+            # No numeric weights available, fall back to first available
             variant = list(files.keys())[0]
+            print(f"  [Font] No weights found. Using fallback: {variant}")
 
     font_url = files[variant]
 
