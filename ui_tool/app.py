@@ -101,6 +101,30 @@ def main():
     report = data["report"]
     bg_image = data["background_image"]
     
+    # --- DEBUG PANEL ---
+    with st.sidebar.expander("🔍 Debug: Full JSON Report", expanded=False):
+        import json
+        st.json(report)
+        
+        st.markdown("---")
+        st.markdown("### Font Weight Summary")
+        text_regions = report.get("text_detection", {}).get("regions", [])
+        for region in text_regions:
+            rid = region.get("id", "?")
+            gemini = region.get("gemini_analysis", {})
+            if not gemini: continue
+            
+            role = gemini.get("role", "?")
+            text = gemini.get("text", "")[:30]
+            font = gemini.get("primary_font", "?")
+            weight = gemini.get("font_weight", "?")
+            residue = region.get("layer_residue", False)
+            
+            status = "🔴 RESIDUE" if residue else "🟢 OK"
+            st.markdown(f"**R{rid}** ({role}): `{font}` @ **{weight}** {status}")
+            st.caption(f"'{text}...'")
+    # --- END DEBUG ---
+    
     # 3. Canvas Config
     # Sidebar width override
     # 3. Canvas Config
