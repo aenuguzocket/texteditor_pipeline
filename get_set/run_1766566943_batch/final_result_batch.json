@@ -1,0 +1,126 @@
+{
+  "image": "image\\18f5c3c6-e7cf-4ea1-b674-35467e779422.png",
+  "dimensions": {
+    "width": 1024,
+    "height": 1536
+  },
+  "pipeline_timing": {
+    "step_1_craft_detection": 3.308,
+    "step_2_gemini_analysis": 7.6869,
+    "step_3_font_normalization": 0.0,
+    "total_pipeline_time": 10.9956
+  },
+  "regions": [
+    {
+      "id": 1,
+      "bbox": {
+        "x": 168,
+        "y": 338,
+        "width": 718,
+        "height": 137
+      },
+      "polygon": [
+        [
+          192,
+          343
+        ],
+        [
+          861,
+          343
+        ],
+        [
+          861,
+          470
+        ],
+        [
+          192,
+          470
+        ]
+      ],
+      "text_content": {
+        "text": "SLIDE INTO",
+        "role": "heading",
+        "raw_font": "Anton",
+        "raw_weight": "extrabold",
+        "normalized_font": "Anton",
+        "normalized_weight": 400,
+        "text_case": "uppercase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 2,
+      "bbox": {
+        "x": 143,
+        "y": 475,
+        "width": 736,
+        "height": 137
+      },
+      "polygon": [
+        [
+          168,
+          480
+        ],
+        [
+          854,
+          480
+        ],
+        [
+          854,
+          607
+        ],
+        [
+          168,
+          607
+        ]
+      ],
+      "text_content": {
+        "text": "GREATNESS",
+        "role": "heading",
+        "raw_font": "Anton",
+        "raw_weight": "extrabold",
+        "normalized_font": "Anton",
+        "normalized_weight": 400,
+        "text_case": "uppercase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 3,
+      "bbox": {
+        "x": 238,
+        "y": 638,
+        "width": 546,
+        "height": 68
+      },
+      "polygon": [
+        [
+          256,
+          640
+        ],
+        [
+          765,
+          640
+        ],
+        [
+          765,
+          703
+        ],
+        [
+          256,
+          703
+        ]
+      ],
+      "text_content": {
+        "text": "STEP UP YOUR GAME",
+        "role": "subheading",
+        "raw_font": "Anton",
+        "raw_weight": "extrabold",
+        "normalized_font": "Anton",
+        "normalized_weight": 400,
+        "text_case": "uppercase",
+        "color": "#FFFFFF"
+      }
+    }
+  ]
+}

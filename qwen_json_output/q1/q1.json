@@ -1,0 +1,56 @@
+{
+    "images": [
+        {
+            "url": "https://v3b.fal.media/files/b/0a885d33/kBShXVmGgrX8J49VyaeIL.png",
+            "content_type": "image/png",
+            "file_name": "kBShXVmGgrX8J49VyaeIL.png",
+            "file_size": null,
+            "width": 512,
+            "height": 768
+        },
+        {
+            "url": "https://v3b.fal.media/files/b/0a885d33/bDk1Zd2457nfzXU36csub.png",
+            "content_type": "image/png",
+            "file_name": "bDk1Zd2457nfzXU36csub.png",
+            "file_size": null,
+            "width": 512,
+            "height": 768
+        },
+        {
+            "url": "https://v3b.fal.media/files/b/0a885d33/D4ww9wV72M3tlv97e3zaT.png",
+            "content_type": "image/png",
+            "file_name": "D4ww9wV72M3tlv97e3zaT.png",
+            "file_size": null,
+            "width": 512,
+            "height": 768
+        },
+        {
+            "url": "https://v3b.fal.media/files/b/0a885d33/9W8pG1MWcSE69AUav9OP9.png",
+            "content_type": "image/png",
+            "file_name": "9W8pG1MWcSE69AUav9OP9.png",
+            "file_size": null,
+            "width": 512,
+            "height": 768
+        },
+        {
+            "url": "https://v3b.fal.media/files/b/0a885d33/-g4r4_Js6cA1zOSJFDnfo.png",
+            "content_type": "image/png",
+            "file_name": "-g4r4_Js6cA1zOSJFDnfo.png",
+            "file_size": null,
+            "width": 512,
+            "height": 768
+        }
+    ],
+    "timings": {
+        "inference": 23.191063412465155
+    },
+    "seed": 1381698402,
+    "has_nsfw_concepts": [
+        false,
+        false,
+        false,
+        false,
+        false
+    ],
+    "prompt": "subject, text, logo, background"
+}

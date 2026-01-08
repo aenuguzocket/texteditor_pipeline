@@ -1,0 +1,223 @@
+[
+  {
+    "region_id": 1,
+    "analysis": {
+      "text": "flexslot",
+      "role": "logo",
+      "primary_font": "Plus Jakarta Sans",
+      "fallback_font": "sans-serif",
+      "font_weight": 700,
+      "text_case": "lowercase",
+      "text_color": "#232B2D",
+      "cta_intent": "none"
+    }
+  },
+  {
+    "region_id": 2,
+    "analysis": {
+      "text": "Cancellation fees",
+      "role": "heading",
+      "primary_font": "Plus Jakarta Sans",
+      "fallback_font": "sans-serif",
+      "font_weight": 700,
+      "text_case": "titlecase",
+      "text_color": "#5A6165",
+      "cta_intent": "none"
+    }
+  },
+  {
+    "region_id": 4,
+    "analysis": {
+      "text": "don't refill chairs.",
+      "role": "heading",
+      "primary_font": "Plus Jakarta Sans",
+      "fallback_font": "sans-serif",
+      "font_weight": 700,
+      "text_case": "sentencecase",
+      "text_color": "#5A6165",
+      "cta_intent": "none"
+    }
+  },
+  {
+    "region_id": 7,
+    "analysis": {
+      "text": "Calendar",
+      "role": "ui_element",
+      "primary_font": "Poppins",
+      "fallback_font": "sans-serif",
+      "font_weight": 500,
+      "text_case": "titlecase",
+      "text_color": "#FFFFFF",
+      "cta_intent": "none"
+    }
+  },
+  {
+    "region_id": 8,
+    "analysis": {
+      "text": "9:00",
+      "role": "ui_element",
+      "primary_font": "Inter",
+      "fallback_font": "sans-serif",
+      "font_weight": 400,
+      "text_case": "lowercase",
+      "text_color": "#555555",
+      "cta_intent": "none"
+    }
+  },
+  {
+    "region_id": 9,
+    "analysis": {
+      "text": "AM",
+      "role": "ui_element",
+      "primary_font": "Inter",
+      "fallback_font": "sans-serif",
+      "font_weight": 300,
+      "text_case": "uppercase",
+      "text_color": "#555555",
+      "cta_intent": "none"
+    }
+  },
+  {
+    "region_id": 10,
+    "analysis": {
+      "text": "10:00",
+      "role": "ui_element",
+      "primary_font": "Inter",
+      "fallback_font": "sans-serif",
+      "font_weight": 400,
+      "text_case": "lowercase",
+      "text_color": "#555555",
+      "cta_intent": "none"
+    }
+  },
+  {
+    "region_id": 12,
+    "analysis": {
+      "text": "Canceled -> Refilled",
+      "role": "ui_element",
+      "primary_font": "Poppins",
+      "fallback_font": "sans-serif",
+      "font_weight": 500,
+      "text_case": "titlecase",
+      "text_color": "#6A6A6A",
+      "cta_intent": "none"
+    }
+  },
+  {
+    "region_id": 13,
+    "analysis": {
+      "text": "AM",
+      "role": "ui_element",
+      "primary_font": "Inter",
+      "fallback_font": "sans-serif",
+      "font_weight": 300,
+      "text_case": "uppercase",
+      "text_color": "#555555",
+      "cta_intent": "none"
+    }
+  },
+  {
+    "region_id": 14,
+    "analysis": {
+      "text": "11:00",
+      "role": "ui_element",
+      "primary_font": "Inter",
+      "fallback_font": "sans-serif",
+      "font_weight": 400,
+      "text_case": "lowercase",
+      "text_color": "#555555",
+      "cta_intent": "none"
+    }
+  },
+  {
+    "region_id": 15,
+    "analysis": {
+      "text": "AM",
+      "role": "ui_element",
+      "primary_font": "Inter",
+      "fallback_font": "sans-serif",
+      "font_weight": 300,
+      "text_case": "uppercase",
+      "text_color": "#555555",
+      "cta_intent": "none"
+    }
+  },
+  {
+    "region_id": 16,
+    "analysis": {
+      "text": "12:00",
+      "role": "ui_element",
+      "primary_font": "Inter",
+      "fallback_font": "sans-serif",
+      "font_weight": 400,
+      "text_case": "lowercase",
+      "text_color": "#555555",
+      "cta_intent": "none"
+    }
+  },
+  {
+    "region_id": 17,
+    "analysis": {
+      "text": "PM",
+      "role": "ui_element",
+      "primary_font": "Inter",
+      "fallback_font": "sans-serif",
+      "font_weight": 300,
+      "text_case": "uppercase",
+      "text_color": "#555555",
+      "cta_intent": "none"
+    }
+  },
+  {
+    "region_id": 21,
+    "analysis": {
+      "text": "Fill chairs when plans change",
+      "role": "body",
+      "primary_font": "Poppins",
+      "fallback_font": "sans-serif",
+      "font_weight": 400,
+      "text_case": "sentencecase",
+      "text_color": "#333333",
+      "cta_intent": "none"
+    }
+  },
+  {
+    "region_id": 23,
+    "analysis": {
+      "text": "no awkward fees.",
+      "role": "body",
+      "primary_font": "Poppins",
+      "fallback_font": "sans-serif",
+      "font_weight": 400,
+      "text_case": "lowercase",
+      "text_color": "#333333",
+      "cta_intent": "none"
+    }
+  },
+  {
+    "region_id": 26,
+    "analysis": {
+      "text": "Join the waitlist:",
+      "role": "cta",
+      "primary_font": "Plus Jakarta Sans",
+      "fallback_font": "sans-serif",
+      "font_weight": 800,
+      "text_case": "titlecase",
+      "text_color": "#FFFFFF",
+      "cta_intent": "sign_up"
+    }
+  },
+  {
+    "region_id": 28,
+    "analysis": {
+      "text": "flexslot.com",
+      "role": "cta",
+      "primary_font": "Plus Jakarta Sans",
+      "fallback_font": "sans-serif",
+      "font_weight": 800,
+      "text_case": "lowercase",
+      "text_color": "#FFFFFF",
+      "cta_intent": "sign_up"
+    }
+  }
+]

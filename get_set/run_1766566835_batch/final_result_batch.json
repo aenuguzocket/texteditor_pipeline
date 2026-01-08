@@ -1,0 +1,274 @@
+{
+  "image": "image\\978fc255-b54e-4944-91ba-8fc48ab3d618.png",
+  "dimensions": {
+    "width": 1024,
+    "height": 1536
+  },
+  "pipeline_timing": {
+    "step_1_craft_detection": 3.3497,
+    "step_2_gemini_analysis": 15.6462,
+    "step_3_font_normalization": 0.0001,
+    "total_pipeline_time": 18.9969
+  },
+  "regions": [
+    {
+      "id": 1,
+      "bbox": {
+        "x": 43,
+        "y": 51,
+        "width": 420,
+        "height": 102
+      },
+      "polygon": [
+        [
+          57,
+          55
+        ],
+        [
+          448,
+          55
+        ],
+        [
+          448,
+          148
+        ],
+        [
+          57,
+          148
+        ]
+      ],
+      "text_content": {
+        "text": "classic",
+        "role": "heading",
+        "raw_font": "Bebas Neue",
+        "raw_weight": "bold",
+        "normalized_font": "Bebas Neue",
+        "normalized_weight": 400,
+        "text_case": "uppercase",
+        "color": "#F0F0E8"
+      }
+    },
+    {
+      "id": 2,
+      "bbox": {
+        "x": 48,
+        "y": 145,
+        "width": 309,
+        "height": 105
+      },
+      "polygon": [
+        [
+          60,
+          148
+        ],
+        [
+          346,
+          153
+        ],
+        [
+          345,
+          246
+        ],
+        [
+          58,
+          242
+        ]
+      ],
+      "text_content": {
+        "text": "VIBES.",
+        "role": "heading",
+        "raw_font": "Bebas Neue",
+        "raw_weight": "bold",
+        "normalized_font": "Bebas Neue",
+        "normalized_weight": 400,
+        "text_case": "uppercase",
+        "color": "#F0F0E8"
+      }
+    },
+    {
+      "id": 3,
+      "bbox": {
+        "x": 51,
+        "y": 243,
+        "width": 407,
+        "height": 102
+      },
+      "polygon": [
+        [
+          64,
+          247
+        ],
+        [
+          444,
+          247
+        ],
+        [
+          444,
+          340
+        ],
+        [
+          64,
+          340
+        ]
+      ],
+      "text_content": {
+        "text": "MODERN",
+        "role": "heading",
+        "raw_font": "Bebas Neue",
+        "raw_weight": "bold",
+        "normalized_font": "Bebas Neue",
+        "normalized_weight": 400,
+        "text_case": "uppercase",
+        "color": "#F0F0E8"
+      }
+    },
+    {
+      "id": 4,
+      "bbox": {
+        "x": 51,
+        "y": 340,
+        "width": 337,
+        "height": 98
+      },
+      "polygon": [
+        [
+          62,
+          343
+        ],
+        [
+          376,
+          343
+        ],
+        [
+          376,
+          434
+        ],
+        [
+          62,
+          434
+        ]
+      ],
+      "text_content": {
+        "text": "MOVES.",
+        "role": "heading",
+        "raw_font": "Bebas Neue",
+        "raw_weight": "bold",
+        "normalized_font": "Bebas Neue",
+        "normalized_weight": 400,
+        "text_case": "uppercase",
+        "color": "#F0F0E8"
+      }
+    },
+    {
+      "id": 5,
+      "bbox": {
+        "x": 53,
+        "y": 1047,
+        "width": 199,
+        "height": 49
+      },
+      "polygon": [
+        [
+          60,
+          1048
+        ],
+        [
+          244,
+          1048
+        ],
+        [
+          244,
+          1094
+        ],
+        [
+          60,
+          1094
+        ]
+      ],
+      "text_content": {
+        "text": "HERITAGE",
+        "role": "subheading",
+        "raw_font": "Bebas Neue",
+        "raw_weight": "bold",
+        "normalized_font": "Bebas Neue",
+        "normalized_weight": 400,
+        "text_case": "uppercase",
+        "color": "#F0F0E8"
+      }
+    },
+    {
+      "id": 6,
+      "bbox": {
+        "x": 52,
+        "y": 1097,
+        "width": 235,
+        "height": 52
+      },
+      "polygon": [
+        [
+          60,
+          1099
+        ],
+        [
+          278,
+          1099
+        ],
+        [
+          278,
+          1147
+        ],
+        [
+          60,
+          1147
+        ]
+      ],
+      "text_content": {
+        "text": "REDEFINED.",
+        "role": "subheading",
+        "raw_font": "Bebas Neue",
+        "raw_weight": "bold",
+        "normalized_font": "Bebas Neue",
+        "normalized_weight": 400,
+        "text_case": "uppercase",
+        "color": "#F0F0E8"
+      }
+    },
+    {
+      "id": 7,
+      "bbox": {
+        "x": 53,
+        "y": 1431,
+        "width": 214,
+        "height": 40
+      },
+      "polygon": [
+        [
+          60,
+          1432
+        ],
+        [
+          259,
+          1432
+        ],
+        [
+          259,
+          1468
+        ],
+        [
+          60,
+          1468
+        ]
+      ],
+      "text_content": {
+        "text": "SHOP NOW",
+        "role": "cta",
+        "raw_font": "Oswald",
+        "raw_weight": "bold",
+        "normalized_font": "Oswald",
+        "normalized_weight": 700,
+        "text_case": "uppercase",
+        "color": "#F0F0E8"
+      }
+    }
+  ]
+}

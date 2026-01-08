@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Models
+*.pth
+
+# Outputs
+# outputs/
+# outputs_all_line/
+
+# Editor
+.vscode/
+.idea/
+
+# Local data
+google_fonts_cache.json
+google_fonts_full_cache.json
+gemini_text_analysis*.json
+text_analysis_normalized.json
+
+# Pipeline V2 Outputs
+pipeline_outputs/
+image/uploads/
+final_image/
+json_files/
+.tmp/
+
+# Fonts
+fonts/
+pipeline_v2/rendering/fonts/

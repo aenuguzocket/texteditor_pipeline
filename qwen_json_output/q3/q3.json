@@ -1,0 +1,47 @@
+{
+    "images": [
+        {
+            "url": "https://v3b.fal.media/files/b/0a887a02/h6mdFfBAlumyc4I8wcf7C.png",
+            "content_type": "image/png",
+            "file_name": "h6mdFfBAlumyc4I8wcf7C.png",
+            "file_size": null,
+            "width": 480,
+            "height": 864
+        },
+        {
+            "url": "https://v3b.fal.media/files/b/0a887a02/dm5aV16uU9SQpIRu81v76.png",
+            "content_type": "image/png",
+            "file_name": "dm5aV16uU9SQpIRu81v76.png",
+            "file_size": null,
+            "width": 480,
+            "height": 864
+        },
+        {
+            "url": "https://v3b.fal.media/files/b/0a887a02/O8ApgDw9g-O9MUDlBNwF7.png",
+            "content_type": "image/png",
+            "file_name": "O8ApgDw9g-O9MUDlBNwF7.png",
+            "file_size": null,
+            "width": 480,
+            "height": 864
+        },
+        {
+            "url": "https://v3b.fal.media/files/b/0a887a02/XUFibTHoaZY2gYem1k4Fd.png",
+            "content_type": "image/png",
+            "file_name": "XUFibTHoaZY2gYem1k4Fd.png",
+            "file_size": null,
+            "width": 480,
+            "height": 864
+        }
+    ],
+    "timings": {
+        "inference": 19.316840616054833
+    },
+    "seed": 876456885,
+    "has_nsfw_concepts": [
+        false,
+        false,
+        false,
+        false
+    ],
+    "prompt": "subject, text, logo, background"
+}

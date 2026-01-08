@@ -1,0 +1,62 @@
+[
+  {
+    "text": "NIKE",
+    "role": "logo",
+    "primary_font": "Teko",
+    "fallback_font": "sans-serif",
+    "font_weight": 900,
+    "text_case": "uppercase",
+    "text_color": "#FFFFFF",
+    "cta_intent": "none"
+  },
+  {
+    "text": "DEFY TERRAIN",
+    "role": "heading",
+    "primary_font": "Teko",
+    "fallback_font": "sans-serif",
+    "font_weight": 900,
+    "text_case": "uppercase",
+    "text_color": "#FFFFFF",
+    "cta_intent": "none"
+  },
+  {
+    "text": "COMMAND EVERY MILE.",
+    "role": "subheading",
+    "primary_font": "Barlow",
+    "fallback_font": "sans-serif",
+    "font_weight": 700,
+    "text_case": "uppercase",
+    "text_color": "#C4F82A",
+    "cta_intent": "none"
+  },
+  {
+    "text": "ZoomX Cushioning",
+    "role": "usp",
+    "primary_font": "Montserrat",
+    "fallback_font": "sans-serif",
+    "font_weight": 300,
+    "text_case": "titlecase",
+    "text_color": "#FFFFFF",
+    "cta_intent": "none"
+  },
+  {
+    "text": "Vibram\u00ae Megagrip",
+    "role": "usp",
+    "primary_font": "Montserrat",
+    "fallback_font": "sans-serif",
+    "font_weight": 400,
+    "text_case": "titlecase",
+    "text_color": "#FFFFFF",
+    "cta_intent": "none"
+  },
+  {
+    "text": "SHOP ZEGAMA 2",
+    "role": "cta",
+    "primary_font": "Poppins",
+    "fallback_font": "sans-serif",
+    "font_weight": 800,
+    "text_case": "uppercase",
+    "text_color": "#000000",
+    "cta_intent": "shop_now"
+  }
+]

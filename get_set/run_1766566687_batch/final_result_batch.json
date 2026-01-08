@@ -1,0 +1,940 @@
+{
+  "image": "image\\7015ce93-81f5-405c-a514-979c91689be7.png",
+  "dimensions": {
+    "width": 1080,
+    "height": 1920
+  },
+  "pipeline_timing": {
+    "step_1_craft_detection": 3.4847,
+    "step_2_gemini_analysis": 31.5388,
+    "step_3_font_normalization": 0.0001,
+    "total_pipeline_time": 35.0243
+  },
+  "regions": [
+    {
+      "id": 1,
+      "bbox": {
+        "x": 208,
+        "y": 260,
+        "width": 676,
+        "height": 113
+      },
+      "polygon": [
+        [
+          231,
+          264
+        ],
+        [
+          861,
+          264
+        ],
+        [
+          861,
+          369
+        ],
+        [
+          231,
+          369
+        ]
+      ],
+      "text_content": {
+        "text": "ZERO GREASE.",
+        "role": "heading",
+        "raw_font": "Anton",
+        "raw_weight": "extrabold",
+        "normalized_font": "Anton",
+        "normalized_weight": 400,
+        "text_case": "uppercase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 2,
+      "bbox": {
+        "x": 109,
+        "y": 371,
+        "width": 874,
+        "height": 110
+      },
+      "polygon": [
+        [
+          138,
+          375
+        ],
+        [
+          954,
+          375
+        ],
+        [
+          954,
+          477
+        ],
+        [
+          138,
+          477
+        ]
+      ],
+      "text_content": {
+        "text": "FULL PROTECTION.",
+        "role": "heading",
+        "raw_font": "Anton",
+        "raw_weight": "extrabold",
+        "normalized_font": "Anton",
+        "normalized_weight": 400,
+        "text_case": "uppercase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 3,
+      "bbox": {
+        "x": 623,
+        "y": 613,
+        "width": 212,
+        "height": 49
+      },
+      "polygon": [
+        [
+          630,
+          615
+        ],
+        [
+          828,
+          615
+        ],
+        [
+          828,
+          660
+        ],
+        [
+          630,
+          660
+        ]
+      ],
+      "text_content": {
+        "text": "SPF 55+",
+        "role": "label",
+        "raw_font": "Roboto",
+        "raw_weight": "bold",
+        "normalized_font": "Roboto",
+        "normalized_weight": 700,
+        "text_case": "uppercase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 4,
+      "bbox": {
+        "x": 252,
+        "y": 631,
+        "width": 81,
+        "height": 61
+      },
+      "polygon": [
+        [
+          255,
+          633
+        ],
+        [
+          330,
+          633
+        ],
+        [
+          330,
+          690
+        ],
+        [
+          255,
+          690
+        ]
+      ],
+      "text_content": {
+        "text": "de",
+        "role": "body",
+        "raw_font": "Roboto",
+        "raw_weight": "regular",
+        "normalized_font": "Roboto",
+        "normalized_weight": 400,
+        "text_case": "lowercase",
+        "color": "#000000"
+      }
+    },
+    {
+      "id": 5,
+      "bbox": {
+        "x": 617,
+        "y": 670,
+        "width": 377,
+        "height": 49
+      },
+      "polygon": [
+        [
+          630,
+          672
+        ],
+        [
+          981,
+          672
+        ],
+        [
+          981,
+          717
+        ],
+        [
+          630,
+          717
+        ]
+      ],
+      "text_content": {
+        "text": "BROAD SPECTRUM",
+        "role": "usp",
+        "raw_font": "Anton",
+        "raw_weight": "extrabold",
+        "normalized_font": "Anton",
+        "normalized_weight": 400,
+        "text_case": "uppercase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 6,
+      "bbox": {
+        "x": 253,
+        "y": 691,
+        "width": 148,
+        "height": 46
+      },
+      "polygon": [
+        [
+          258,
+          693
+        ],
+        [
+          396,
+          693
+        ],
+        [
+          396,
+          735
+        ],
+        [
+          258,
+          735
+        ]
+      ],
+      "text_content": {
+        "text": "cons",
+        "role": "body",
+        "raw_font": "Roboto",
+        "raw_weight": "regular",
+        "normalized_font": "Roboto",
+        "normalized_weight": 400,
+        "text_case": "lowercase",
+        "color": "#000000"
+      }
+    },
+    {
+      "id": 7,
+      "bbox": {
+        "x": 249,
+        "y": 736,
+        "width": 159,
+        "height": 52
+      },
+      "polygon": [
+        [
+          255,
+          738
+        ],
+        [
+          402,
+          738
+        ],
+        [
+          402,
+          786
+        ],
+        [
+          255,
+          786
+        ]
+      ],
+      "text_content": {
+        "text": "truct\u00ae",
+        "role": "body",
+        "raw_font": "Roboto",
+        "raw_weight": "regular",
+        "normalized_font": "Roboto",
+        "normalized_weight": 400,
+        "text_case": "lowercase",
+        "color": "#000000"
+      }
+    },
+    {
+      "id": 8,
+      "bbox": {
+        "x": 618,
+        "y": 778,
+        "width": 345,
+        "height": 49
+      },
+      "polygon": [
+        [
+          630,
+          780
+        ],
+        [
+          951,
+          780
+        ],
+        [
+          951,
+          825
+        ],
+        [
+          630,
+          825
+        ]
+      ],
+      "text_content": {
+        "text": "LIGHTWEIGHT",
+        "role": "usp",
+        "raw_font": "Anton",
+        "raw_weight": "extrabold",
+        "normalized_font": "Anton",
+        "normalized_weight": 400,
+        "text_case": "uppercase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 9,
+      "bbox": {
+        "x": 247,
+        "y": 794,
+        "width": 220,
+        "height": 23
+      },
+      "polygon": [
+        [
+          255,
+          795
+        ],
+        [
+          459,
+          795
+        ],
+        [
+          459,
+          816
+        ],
+        [
+          255,
+          816
+        ]
+      ],
+      "text_content": {
+        "text": "Highly, Effective, Yet Gentle.",
+        "role": "usp",
+        "raw_font": "Roboto",
+        "raw_weight": "regular",
+        "normalized_font": "Roboto",
+        "normalized_weight": 400,
+        "text_case": "titlecase",
+        "color": "#000000"
+      }
+    },
+    {
+      "id": 10,
+      "bbox": {
+        "x": 626,
+        "y": 835,
+        "width": 98,
+        "height": 46
+      },
+      "polygon": [
+        [
+          630,
+          837
+        ],
+        [
+          720,
+          837
+        ],
+        [
+          720,
+          879
+        ],
+        [
+          630,
+          879
+        ]
+      ],
+      "text_content": {
+        "text": "GEL",
+        "role": "label",
+        "raw_font": "Roboto",
+        "raw_weight": "bold",
+        "normalized_font": "Roboto",
+        "normalized_weight": 700,
+        "text_case": "uppercase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 11,
+      "bbox": {
+        "x": 251,
+        "y": 845,
+        "width": 113,
+        "height": 26
+      },
+      "polygon": [
+        [
+          255,
+          846
+        ],
+        [
+          360,
+          846
+        ],
+        [
+          360,
+          870
+        ],
+        [
+          255,
+          870
+        ]
+      ],
+      "text_content": {
+        "text": "Lightweight",
+        "role": "usp",
+        "raw_font": "Roboto",
+        "raw_weight": "regular",
+        "normalized_font": "Roboto",
+        "normalized_weight": 400,
+        "text_case": "sentencecase",
+        "color": "#000000"
+      }
+    },
+    {
+      "id": 12,
+      "bbox": {
+        "x": 255,
+        "y": 871,
+        "width": 66,
+        "height": 34
+      },
+      "polygon": [
+        [
+          258,
+          873
+        ],
+        [
+          318,
+          873
+        ],
+        [
+          318,
+          903
+        ],
+        [
+          258,
+          903
+        ]
+      ],
+      "text_content": {
+        "text": "GEL",
+        "role": "label",
+        "raw_font": "Roboto",
+        "raw_weight": "bold",
+        "normalized_font": "Roboto",
+        "normalized_weight": 700,
+        "text_case": "uppercase",
+        "color": "#000000"
+      }
+    },
+    {
+      "id": 13,
+      "bbox": {
+        "x": 248,
+        "y": 907,
+        "width": 194,
+        "height": 34
+      },
+      "polygon": [
+        [
+          255,
+          909
+        ],
+        [
+          435,
+          909
+        ],
+        [
+          435,
+          939
+        ],
+        [
+          255,
+          939
+        ]
+      ],
+      "text_content": {
+        "text": "SUNSCREEN",
+        "role": "label",
+        "raw_font": "Roboto",
+        "raw_weight": "regular",
+        "normalized_font": "Roboto",
+        "normalized_weight": 400,
+        "text_case": "uppercase",
+        "color": "#000000"
+      }
+    },
+    {
+      "id": 14,
+      "bbox": {
+        "x": 623,
+        "y": 940,
+        "width": 212,
+        "height": 49
+      },
+      "polygon": [
+        [
+          630,
+          942
+        ],
+        [
+          828,
+          942
+        ],
+        [
+          828,
+          987
+        ],
+        [
+          630,
+          987
+        ]
+      ],
+      "text_content": {
+        "text": "VEGAN &",
+        "role": "usp",
+        "raw_font": "Anton",
+        "raw_weight": "extrabold",
+        "normalized_font": "Anton",
+        "normalized_weight": 400,
+        "text_case": "uppercase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 15,
+      "bbox": {
+        "x": 247,
+        "y": 956,
+        "width": 223,
+        "height": 20
+      },
+      "polygon": [
+        [
+          255,
+          957
+        ],
+        [
+          462,
+          957
+        ],
+        [
+          462,
+          975
+        ],
+        [
+          255,
+          975
+        ]
+      ],
+      "text_content": {
+        "text": "Broad Spectrum Protection",
+        "role": "usp",
+        "raw_font": "Roboto",
+        "raw_weight": "regular",
+        "normalized_font": "Roboto",
+        "normalized_weight": 400,
+        "text_case": "titlecase",
+        "color": "#000000"
+      }
+    },
+    {
+      "id": 16,
+      "bbox": {
+        "x": 618,
+        "y": 994,
+        "width": 354,
+        "height": 49
+      },
+      "polygon": [
+        [
+          630,
+          996
+        ],
+        [
+          960,
+          996
+        ],
+        [
+          960,
+          1041
+        ],
+        [
+          630,
+          1041
+        ]
+      ],
+      "text_content": {
+        "text": "CRUELTY-FREE",
+        "role": "usp",
+        "raw_font": "Anton",
+        "raw_weight": "extrabold",
+        "normalized_font": "Anton",
+        "normalized_weight": 400,
+        "text_case": "uppercase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 17,
+      "bbox": {
+        "x": 256,
+        "y": 1013,
+        "width": 61,
+        "height": 29
+      },
+      "polygon": [
+        [
+          258,
+          1014
+        ],
+        [
+          315,
+          1014
+        ],
+        [
+          315,
+          1041
+        ],
+        [
+          258,
+          1041
+        ]
+      ],
+      "text_content": {
+        "text": "SPF",
+        "role": "label",
+        "raw_font": "Roboto",
+        "raw_weight": "bold",
+        "normalized_font": "Roboto",
+        "normalized_weight": 700,
+        "text_case": "uppercase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 18,
+      "bbox": {
+        "x": 391,
+        "y": 1013,
+        "width": 43,
+        "height": 29
+      },
+      "polygon": [
+        [
+          393,
+          1014
+        ],
+        [
+          432,
+          1014
+        ],
+        [
+          432,
+          1041
+        ],
+        [
+          393,
+          1041
+        ]
+      ],
+      "text_content": {
+        "text": "PA",
+        "role": "label",
+        "raw_font": "Roboto",
+        "raw_weight": "bold",
+        "normalized_font": "Roboto",
+        "normalized_weight": 700,
+        "text_case": "uppercase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 19,
+      "bbox": {
+        "x": 251,
+        "y": 1042,
+        "width": 203,
+        "height": 43
+      },
+      "polygon": [
+        [
+          258,
+          1044
+        ],
+        [
+          447,
+          1044
+        ],
+        [
+          447,
+          1083
+        ],
+        [
+          258,
+          1083
+        ]
+      ],
+      "text_content": {
+        "text": "55+ | +++",
+        "role": "label",
+        "raw_font": "Roboto",
+        "raw_weight": "bold",
+        "normalized_font": "Roboto",
+        "normalized_weight": 700,
+        "text_case": "uppercase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 20,
+      "bbox": {
+        "x": 255,
+        "y": 1103,
+        "width": 180,
+        "height": 23
+      },
+      "polygon": [
+        [
+          261,
+          1104
+        ],
+        [
+          429,
+          1104
+        ],
+        [
+          429,
+          1125
+        ],
+        [
+          261,
+          1125
+        ]
+      ],
+      "text_content": {
+        "text": "For all skin types",
+        "role": "usp",
+        "raw_font": "Roboto",
+        "raw_weight": "regular",
+        "normalized_font": "Roboto",
+        "normalized_weight": 400,
+        "text_case": "sentencecase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 21,
+      "bbox": {
+        "x": 303,
+        "y": 1151,
+        "width": 134,
+        "height": 20
+      },
+      "polygon": [
+        [
+          308,
+          1151
+        ],
+        [
+          432,
+          1151
+        ],
+        [
+          432,
+          1170
+        ],
+        [
+          308,
+          1170
+        ]
+      ],
+      "text_content": {
+        "text": "Prevents tanning",
+        "role": "usp",
+        "raw_font": "Roboto",
+        "raw_weight": "regular",
+        "normalized_font": "Roboto",
+        "normalized_weight": 400,
+        "text_case": "sentencecase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 22,
+      "bbox": {
+        "x": 300,
+        "y": 1178,
+        "width": 159,
+        "height": 23
+      },
+      "polygon": [
+        [
+          306,
+          1179
+        ],
+        [
+          453,
+          1179
+        ],
+        [
+          453,
+          1200
+        ],
+        [
+          306,
+          1200
+        ]
+      ],
+      "text_content": {
+        "text": "Non-oN, ron-sinaty",
+        "role": "usp",
+        "raw_font": "Roboto",
+        "raw_weight": "regular",
+        "normalized_font": "Roboto",
+        "normalized_weight": 400,
+        "text_case": "sentencecase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 23,
+      "bbox": {
+        "x": 301,
+        "y": 1208,
+        "width": 148,
+        "height": 20
+      },
+      "polygon": [
+        [
+          306,
+          1209
+        ],
+        [
+          444,
+          1209
+        ],
+        [
+          444,
+          1227
+        ],
+        [
+          306,
+          1227
+        ]
+      ],
+      "text_content": {
+        "text": "Provides hydration",
+        "role": "usp",
+        "raw_font": "Roboto",
+        "raw_weight": "regular",
+        "normalized_font": "Roboto",
+        "normalized_weight": 400,
+        "text_case": "sentencecase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 24,
+      "bbox": {
+        "x": 258,
+        "y": 1244,
+        "width": 66,
+        "height": 26
+      },
+      "polygon": [
+        [
+          261,
+          1245
+        ],
+        [
+          321,
+          1245
+        ],
+        [
+          321,
+          1269
+        ],
+        [
+          261,
+          1269
+        ]
+      ],
+      "text_content": {
+        "text": "50 gm",
+        "role": "label",
+        "raw_font": "Roboto",
+        "raw_weight": "regular",
+        "normalized_font": "Roboto",
+        "normalized_weight": 400,
+        "text_case": "lowercase",
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": 25,
+      "bbox": {
+        "x": 379,
+        "y": 1555,
+        "width": 325,
+        "height": 58
+      },
+      "polygon": [
+        [
+          390,
+          1557
+        ],
+        [
+          693,
+          1557
+        ],
+        [
+          693,
+          1611
+        ],
+        [
+          390,
+          1611
+        ]
+      ],
+      "text_content": {
+        "text": "GET YOURS",
+        "role": "cta",
+        "raw_font": "Anton",
+        "raw_weight": "extrabold",
+        "normalized_font": "Anton",
+        "normalized_weight": 400,
+        "text_case": "uppercase",
+        "color": "#000000"
+      }
+    }
+  ]
+}
