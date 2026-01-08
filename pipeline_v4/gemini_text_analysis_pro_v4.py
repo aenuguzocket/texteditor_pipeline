@@ -14,13 +14,36 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 # --------------------------------------------------
 # CONFIG - Using gemini-2.5-pro for better accuracy
 # --------------------------------------------------
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+MODEL_NAME = "gemini-2.5-pro"
 
-MODEL_NAME = "gemini-2.5-pro"  # Better visual analysis (billing enabled)
+def get_gemini_client():
+    """Lazily initialize and return the Gemini client."""
+    api_key = os.getenv("GEMINI_API_KEY")
+    
+    # Fallback to Streamlit secrets if env var is missing
+    if not api_key:
+        try:
+            import streamlit as st
+            if "GEMINI_API_KEY" in st.secrets:
+                api_key = st.secrets["GEMINI_API_KEY"]
+        except ImportError:
+            pass
+            
+    if not api_key:
+        raise ValueError(
+            "GEMINI_API_KEY not found! Please set it in .env (local) or Streamlit Secrets (cloud)."
+        )
+        
+    return genai.Client(api_key=api_key)
+
+# Global client removed to prevent import-time crash
+# client = genai.Client(...) 
+
 
 # --------------------------------------------------
 # ENHANCED JSON SCHEMA with numeric weight
@@ -109,6 +132,7 @@ Critical Rules:
 
 def analyze_text_crop(image_path: str) -> dict:
     """Analyze single text crop with enhanced weight detection."""
+    client = get_gemini_client()
     image = Image.open(image_path)
     
     response = client.models.generate_content(
@@ -202,6 +226,7 @@ def print_call_cost(usage):
 
 def analyze_text_crops_batch(crop_image_paths: list) -> list:
     """Analyze multiple crops in one call with enhanced weight detection."""
+    client = get_gemini_client()
     images = [Image.open(p) for p in crop_image_paths]
 
     response = client.models.generate_content(
