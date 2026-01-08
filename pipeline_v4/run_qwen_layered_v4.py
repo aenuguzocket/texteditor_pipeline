@@ -24,8 +24,8 @@ HEADERS = {
     "Content-Type": "application/json"
 }
 
-INPUT_IMAGE = "image\IMAGE_CTA_BOX\Sparkling Family Joy.png"
-OUTPUT_DIR = Path("outputs/IMAGE_CTA_BOX/Sparkling Family Joy_v4.png")
+INPUT_IMAGE = "image/IMAGE_CTA_BOX/Sparkling Family Joy.png"
+OUTPUT_DIR = Path("outputs/IMAGE_CTA_BOX/Sparkling Family Joy_v4_t")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -66,7 +66,7 @@ def run_qwen_layered(image_path: str, output_dir: Path = None):
     # Optimized Prompting for Text/CTA Separation
     # Positive: Describes clarity and essential elements to help model focus (reduces hallucinations)
     # Negative: Standard quality guardrails
-    prompt = "the image features a distinct call-to-action button, text headings, text subheadings, and text overlays"
+    prompt = "the image features a distinct call-to-action button, text headings, text subheadings and text overlays"
     negative_prompt = "blurry, low quality, distortion, noise, artifacts, messy, jpeg artifacts"
 
     payload = {
@@ -83,6 +83,11 @@ def run_qwen_layered(image_path: str, output_dir: Path = None):
 
     print("Submitting job to fal.ai...")
     submit_resp = requests.post(FAL_ENDPOINT, headers=HEADERS, json=payload)
+    
+    if submit_resp.status_code != 200:
+        print(f"❌ Error: API Request Failed with status {submit_resp.status_code}")
+        print(f"Details: {submit_resp.text}")
+    
     submit_resp.raise_for_status()
     submit_data = submit_resp.json()
 
