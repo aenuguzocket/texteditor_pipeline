@@ -19,6 +19,7 @@ def main():
     try:
         from pipeline_v4.run_pipeline_layered_v4 import run_pipeline_layered
         from pipeline_v4.run_pipeline_box_detection_v4 import run_box_detection_pipeline
+        from pipeline_v4.rendering.google_fonts_runtime_loader import get_font_path
     except ImportError as e:
         st.error(f"Pipeline Import Error: {e}")
         return
@@ -169,12 +170,22 @@ def main():
         img.save(buffered, format="PNG")
         return base64.b64encode(buffered.getvalue()).decode()
 
-    # Use a bundled font path that exists in the repo
-    # This fixes issues on Streamlit Cloud (Linux) where arial.ttf is missing
+    # Default fallback font path
     DEFAULT_FONT = "Roboto-400.ttf"
-    FONT_PATH = root_dir / "fonts" / DEFAULT_FONT
+    FALLBACK_FONT_PATH = root_dir / "fonts" / DEFAULT_FONT
 
-    def calculate_font_size(text, box_h, box_w):
+    def get_dynamic_font_path(font_name, font_weight):
+        """
+        Get the correct font file for the given font name and weight.
+        Falls back to bundled Roboto if Google Fonts fails.
+        """
+        try:
+            return get_font_path(font_name, font_weight)
+        except Exception as e:
+            print(f"Font loading failed for {font_name}@{font_weight}: {e}")
+            return str(FALLBACK_FONT_PATH)
+
+    def calculate_font_size(text, box_h, box_w, font_path=None):
         """
         Calculate max font size where text fits in box (handling wrapping).
         """
@@ -190,7 +201,7 @@ def main():
         while low <= high:
             mid = (low + high) // 2
             try:
-                font = ImageFont.truetype(str(FONT_PATH), mid)
+                font = ImageFont.truetype(str(font_path or FALLBACK_FONT_PATH), mid)
                 
                 # 1. Check if longest word fits width
                 # getlength is more accurate than getbbox for width
@@ -431,7 +442,14 @@ def main():
                         st.write(f"Metric Check Error: {e}")
             # ---------------------------------
             
-            font_size = calculate_font_size(orig_text, canvas_box_h, canvas_box_w)
+            # Get font info from Gemini analysis
+            font_name = gemini.get("primary_font", "Roboto")
+            font_weight = gemini.get("font_weight", 400)
+            
+            # Load the correct font dynamically
+            dynamic_font_path = get_dynamic_font_path(font_name, font_weight)
+            
+            font_size = calculate_font_size(orig_text, canvas_box_h, canvas_box_w, dynamic_font_path)
             
             base_objects.append({
                 "type": "textbox",
@@ -441,7 +459,8 @@ def main():
                 "top": bbox["y"] * scale_y,
                 "width": bbox["width"] * scale_x,
                 "fontSize": font_size,
-                "fontFamily": "sans-serif",
+                "fontFamily": font_name,  # Use correct font family from Gemini
+                "fontWeight": font_weight,  # Pass weight for CSS rendering
                 "fill": color,
                 "backgroundColor": "transparent"
             })
