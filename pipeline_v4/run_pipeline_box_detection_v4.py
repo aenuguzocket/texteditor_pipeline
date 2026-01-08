@@ -110,20 +110,23 @@ def detect_boxes_in_layer(layer_path: str, text_regions: List[Dict],
         bbox_area = bw * bh
         rectangularity = area / bbox_area if bbox_area > 0 else 0
         
-        # Buttons are usually quite rectangular (>0.4 fill ratio) - lowered for CTAs
+        # V4.9.5 FIX: Relaxed Rectangularity back to 0.3 to catch stickers
+        # (Bottle is now excluded by Role-Based Filter)
         if rectangularity < 0.3:
             print(f"    [DEBUG] Component {label_id}: low rectangularity={rectangularity:.2f}")
             continue
-        
-        print(f"    [DEBUG] Component {label_id} PASSED filters: area={area}, rect={rectangularity:.2f}, at ({x},{y}) size {bw}x{bh}")
+            
+        print(f"    [DEBUG] Component {label_id} PASSED filters: area={area}, rect={rectangularity:.2f}")
         
         # Check which text regions this component contains
         contained_regions = []
+        full_text_roles = []
+
+        
         for region in text_regions:
-            # FILTER: Include most text roles for box selection (except product/logo which are usually objects)
-            role = region.get("gemini_analysis", {}).get("role", "body")
-            if role in ["product_text", "logo", "icon"]:
-                continue  # Skip object-intrinsic text
+            # FILTER: Include most text roles for box selection
+            gemini = region.get("gemini_analysis", {})
+            role = gemini.get("role", "body")
             
             # Scale text bbox to layer coordinates
             tx = region["bbox"]["x"] * sx
@@ -132,32 +135,48 @@ def detect_boxes_in_layer(layer_path: str, text_regions: List[Dict],
             th = region["bbox"]["height"] * sy
             
             # Check for ANY overlap between text bbox and component bbox
-            # This is more robust than center-point containment
             x_overlap = max(0, min(x + bw, tx + tw) - max(x, tx))
             y_overlap = max(0, min(y + bh, ty + th) - max(y, ty))
             
             if x_overlap > 0 and y_overlap > 0:
-                # There is overlap - verify at least part of text is in component
-                # Sample the text center, but clamp to component bounds
+                # Overlap logic...
                 text_cx = max(x, min(x + bw - 1, tx + tw / 2))
                 text_cy = max(y, min(y + bh - 1, ty + th / 2))
                 cx_int, cy_int = int(text_cx), int(text_cy)
                 cx_int = max(0, min(w - 1, cx_int))
                 cy_int = max(0, min(h - 1, cy_int))
                 
-                # Accept if the clamped point is in the component OR significant overlap
                 overlap_area = x_overlap * y_overlap
                 text_area = tw * th
                 overlap_ratio = overlap_area / text_area if text_area > 0 else 0
                 
                 if labels[cy_int, cx_int] == label_id or overlap_ratio > 0.3:
                     contained_regions.append(region["id"])
-                    print(f"    [DEBUG] Component {label_id} contains region {region['id']} (overlap={overlap_ratio:.2f})")
-        
+                    full_text_roles.append(role)
+                    # print(f"    [DEBUG] Component {label_id} contains region {region['id']} ({role})")
+
         # Only keep components that contain at least one text region
         if not contained_regions:
             print(f"    [DEBUG] Component {label_id}: no text regions contained")
             continue
+
+        # V4.9.5 FIX: Role-Based Exclusion (Primary Fix)
+        # If the box ONLY contains protected/preserved roles, it IS the object, not a box.
+        # V4.11 UPDATE: Added 'ui_element' and 'usp' to protected list
+        PROTECTED_ROLES = ["product_text", "logo", "icon", "label", "ui_element", "usp"]
+        
+        # Count how many contained regions are protected
+        protected_count = sum(1 for r in full_text_roles if r in PROTECTED_ROLES)
+        
+        if protected_count == len(full_text_roles) and len(full_text_roles) > 0:
+             print(f"    [FILTER] Dropping component {label_id} - Contains ONLY protected roles: {full_text_roles}")
+             continue
+             
+        # If mixed, be careful. If majority is protected, skip.
+        if protected_count > 0 and (protected_count / len(full_text_roles)) > 0.5:
+              print(f"    [FILTER] Dropping component {label_id} - Majority protected roles: {full_text_roles}")
+              continue
+
 
         # V4.9.4 FIX: Filter out Small Accessory Boxes (Icons/Bullets)
         # Logic: A valid "background box" (button, banner) should be LARGER than the text it contains.
@@ -548,5 +567,5 @@ def run_box_detection_pipeline(run_dir: str):
 
 if __name__ == "__main__":
     # Hardcoded for testing
-    RUN_DIR = "pipeline_outputs/run_1767816033_layered"
+    RUN_DIR = "pipeline_outputs/run_1767874217_layered"
     run_box_detection_pipeline(RUN_DIR)

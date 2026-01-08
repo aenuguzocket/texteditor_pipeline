@@ -53,8 +53,10 @@ def clean_layers(layer_paths, output_dir, global_craft_result, gemini_results, o
     cleaning_report = []
 
     # Roles configuration
-    PRESERVE_ROLES = ["product_text", "logo", "ui_element", "label", "icon"]
-    REMOVE_ROLES   = ["heading", "subheading", "body", "cta", "hero_text", "usp"]
+    # Roles configuration
+    # V4.11 UPDATE: Added 'usp' to PRESERVE, removed valid 'hero_text'
+    PRESERVE_ROLES = ["product_text", "logo", "ui_element", "label", "icon", "usp"]
+    REMOVE_ROLES   = ["heading", "subheading", "body", "cta"]
     
     # Initialize detector for LOCAL PIXEL GATING
     # CRITICAL: merge_lines=False
@@ -327,7 +329,7 @@ def run_pipeline_layered(image_path_str: str, mock_layers_dir: str = None) -> st
 
 if __name__ == "__main__":
     # Test
-    # IMAGE_PATH = r"image\IMAGE_CTA_BOX\Summit Clarity (1).png"
-    # MOCK_DIR = r"outputs\IMAGE_CTA_BOX\Summit Clarity (1)_2"
-    # run_pipeline_layered(IMAGE_PATH, MOCK_DIR)
+    IMAGE_PATH = r"image\IMAGE_CTA_BOX\Sparkling Family Joy.png"
+    MOCK_DIR = r"outputs\IMAGE_CTA_BOX\Sparkling Family Joy_2"
+    run_pipeline_layered(IMAGE_PATH, MOCK_DIR)
     pass
