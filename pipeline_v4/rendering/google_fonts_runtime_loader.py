@@ -97,7 +97,9 @@ def get_font_path(font_name: str, font_weight: int) -> str:
         variant = str(font_weight)
 
     if variant not in files:
-        # Smart Weight Fallback: Find the closest available weight
+        # Smart Weight Fallback with Threshold
+        MAX_WEIGHT_DIFF = 200  # Max acceptable difference from requested weight
+        
         # Parse available weights from file keys
         available_weights = []
         for key in files.keys():
@@ -105,22 +107,48 @@ def get_font_path(font_name: str, font_weight: int) -> str:
                 available_weights.append(400)
             elif key.isdigit():
                 available_weights.append(int(key))
-            # Skip italic variants for now
+        
+        best_weight = None
+        best_diff = float('inf')
         
         if available_weights:
-            # Find closest weight, preferring heavier if equidistant
-            closest_weight = min(available_weights, key=lambda w: (abs(w - font_weight), -w))
-            
-            if closest_weight == 400:
+            for w in available_weights:
+                diff = abs(w - font_weight)
+                if diff < best_diff:
+                    best_diff = diff
+                    best_weight = w
+        
+        # Check if best match is within threshold
+        if best_weight is not None and best_diff <= MAX_WEIGHT_DIFF:
+            if best_weight == 400:
                 variant = "regular"
             else:
-                variant = str(closest_weight)
-            
-            print(f"  [Font] Requested weight {font_weight} not found. Using closest: {closest_weight}")
+                variant = str(best_weight)
+            print(f"  [Font] Requested {font_name} {font_weight}. Using closest: {best_weight} (diff: {best_diff})")
         else:
-            # No numeric weights available, fall back to first available
-            variant = list(files.keys())[0]
-            print(f"  [Font] No weights found. Using fallback: {variant}")
+            # Weight difference too large - fallback to Roboto with appropriate weight
+            print(f"  [Font] {font_name} weight {font_weight} not available (closest was {best_weight}, diff {best_diff} > {MAX_WEIGHT_DIFF})")
+            print(f"  [Font] Falling back to Roboto...")
+            
+            # Determine Roboto weight category
+            if font_weight >= 600:
+                # Bold range - use Roboto 700
+                fallback_path = os.path.join(os.path.dirname(os.path.dirname(FONT_DIR)), "fonts", "Roboto-700.ttf")
+                if not os.path.exists(fallback_path):
+                    # Try to download Roboto 700
+                    return get_font_path("Roboto", 700)
+            else:
+                # Regular range - use Roboto 400
+                fallback_path = os.path.join(os.path.dirname(os.path.dirname(FONT_DIR)), "fonts", "Roboto-400.ttf")
+                if not os.path.exists(fallback_path):
+                    return get_font_path("Roboto", 400)
+            
+            if os.path.exists(fallback_path):
+                print(f"  [Font] Using bundled fallback: {fallback_path}")
+                return fallback_path
+            else:
+                # Last resort: download from Roboto
+                return get_font_path("Roboto", font_weight if font_weight in [400, 500, 700] else (700 if font_weight >= 600 else 400))
 
     font_url = files[variant]
 

@@ -12,7 +12,7 @@ from pipeline_v4.run_pipeline_v4 import run_pipeline_v4
 
 def main():
     # Use the absolute path or relative from project root which is cwd
-    image_rel_path = r"image/IMAGE_CTA_BOX/Sparkling Family Joy.png"
+    image_rel_path = r"image/18f5c3c6-e7cf-4ea1-b674-35467e779422.png"
     image_path = Path(image_rel_path)
     
     if not image_path.exists():
