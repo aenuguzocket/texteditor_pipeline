@@ -102,6 +102,41 @@ def main():
     report = data["report"]
     bg_image = data["background_image"]
     
+    # --- INJECT GOOGLE FONTS CSS FOR BROWSER RENDERING ---
+    # Fabric.js canvas runs in the browser and needs fonts loaded via CSS, not server-side
+    text_regions = report.get("text_detection", {}).get("regions", [])
+    unique_fonts = {}  # font_name -> set of weights
+    for region in text_regions:
+        gemini = region.get("gemini_analysis", {})
+        if gemini:
+            font_name = gemini.get("primary_font", "Roboto")
+            font_weight = gemini.get("font_weight", 400)
+            if font_name not in unique_fonts:
+                unique_fonts[font_name] = set()
+            unique_fonts[font_name].add(font_weight)
+    
+    # Build Google Fonts URL
+    if unique_fonts:
+        font_specs = []
+        for font_name, weights in unique_fonts.items():
+            weight_str = ";".join([f"wght@{w}" for w in sorted(weights)])
+            family_encoded = font_name.replace(" ", "+")
+            font_specs.append(f"family={family_encoded}:wght@{','.join(map(str, sorted(weights)))}")
+        
+        google_fonts_url = f"https://fonts.googleapis.com/css2?{'&'.join(font_specs)}&display=swap"
+        
+        # Inject the font CSS
+        st.markdown(f'''
+        <link href="{google_fonts_url}" rel="stylesheet">
+        <style>
+            /* Force canvas text to use the correct fonts */
+            .canvas-container, canvas, .upper-canvas {{
+                font-family: inherit !important;
+            }}
+        </style>
+        ''', unsafe_allow_html=True)
+    # --- END FONT INJECTION ---
+    
     # --- DEBUG PANEL ---
     with st.sidebar.expander("🔍 Debug: Full JSON Report", expanded=False):
         import json
