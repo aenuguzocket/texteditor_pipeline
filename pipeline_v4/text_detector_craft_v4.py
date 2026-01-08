@@ -101,8 +101,9 @@ class CraftTextDetector:
                 print(f"Model not found at {self.model_path}. Downloading...")
                 try:
                     import requests
-                    # Public reliable URL for CRAFT weights (official or widely used fork)
-                    url = "https://github.com/fcakyon/craft-text-detector/releases/download/v0.1/craft_mlt_25k.pth"
+                    # Public reliable URL for CRAFT weights (using keras-ocr release mirror which is reliable)
+                    url = "https://github.com/faustomorales/keras-ocr/releases/download/v0.8.4/craft_mlt_25k.pth"
+                    print(f"Downloading from {url}...")
                     response = requests.get(url, stream=True)
                     response.raise_for_status()
                     
