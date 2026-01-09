@@ -138,44 +138,71 @@ def extract_editable_regions(report: dict) -> tuple[List[dict], List[dict]]:
     text_regions = []
     box_regions = []
     
+    print(f"[DEBUG] Total regions in report: {len(regions)}")
+    
     for region in regions:
-        gemini = region.get("gemini_analysis", {})
-        role = gemini.get("role", "")
+        gemini = region.get("gemini_analysis")
+        
+        # Handle missing gemini_analysis
+        if not gemini:
+            print(f"[DEBUG] Region {region.get('id')} has no gemini_analysis, skipping")
+            continue
+        
+        role = gemini.get("role", "").lower()
         
         # Skip non-editable roles
         if role not in ["heading", "subheading", "body", "cta", "usp"]:
+            print(f"[DEBUG] Region {region.get('id')} has role '{role}', skipping (not editable)")
             continue
         
         # Skip residue
         if region.get("layer_residue", False):
+            print(f"[DEBUG] Region {region.get('id')} is residue, skipping")
             continue
         
         # For USP, only include if extracted
         if role == "usp":
             bg_box = region.get("background_box", {})
             if not bg_box.get("detected", False):
+                print(f"[DEBUG] Region {region.get('id')} is USP but not extracted, skipping")
                 continue
         
+        # Validate bbox exists
+        bbox = region.get("bbox")
+        if not bbox:
+            print(f"[DEBUG] Region {region.get('id')} has no bbox, skipping")
+            continue
+        
         # Create text region
-        text_regions.append({
+        text_data = {
             "id": str(region["id"]),
             "text": gemini.get("text", ""),
-            "bbox": region["bbox"],
+            "bbox": bbox,
             "font": gemini.get("primary_font", "Roboto"),
             "weight": gemini.get("font_weight", 400),
             "color": gemini.get("text_color", "#000000"),
             "role": role
-        })
+        }
+        
+        print(f"[DEBUG] Adding text region: {text_data['id']} - '{text_data['text'][:30]}...'")
+        text_regions.append(text_data)
         
         # Check for background box
         bg_box = region.get("background_box", {})
         if bg_box.get("detected", False):
-            box_regions.append({
+            box_bbox = bg_box.get("bbox", bbox)
+            if not box_bbox:
+                print(f"[DEBUG] Box region {region.get('id')} has no bbox, skipping")
+                continue
+            box_data = {
                 "id": str(region["id"]),
-                "bbox": bg_box.get("bbox", region["bbox"]),
+                "bbox": box_bbox,
                 "color": bg_box.get("color", "#000000")
-            })
+            }
+            print(f"[DEBUG] Adding box region: {box_data['id']}")
+            box_regions.append(box_data)
     
+    print(f"[DEBUG] Extracted {len(text_regions)} text regions, {len(box_regions)} box regions")
     return text_regions, box_regions
 
 
@@ -306,12 +333,26 @@ async def process_image(file: UploadFile = File(...)):
         orig_w = report.get("original_size", {}).get("width", 1080)
         orig_h = report.get("original_size", {}).get("height", 1920)
         
-        # Create base image (without text) for canvas
-        base_img = composite_layers(str(run_path), report)
-        if base_img:
-            base_img = draw_background_boxes(base_img, report, orig_w, orig_h, str(run_path))
-            base_path = run_path / "base_canvas.png"
-            base_img.save(base_path)
+        # Create final composed image (with text rendered) for canvas background
+        try:
+            base_img = composite_layers(str(run_path), report)
+            if base_img:
+                base_img = draw_background_boxes(base_img, report, orig_w, orig_h, str(run_path))
+                # Render text to create final image
+                final_img = render_text_layer(base_img.copy(), report)
+                final_path = run_path / "final_composed.png"
+                final_img.save(final_path)
+                print(f"[DEBUG] Saved final_composed.png to {final_path}")
+        except Exception as e:
+            print(f"[WARNING] Failed to create final image: {e}")
+            import traceback
+            traceback.print_exc()
+            # Fallback to base image
+            base_img = composite_layers(str(run_path), report)
+            if base_img:
+                base_img = draw_background_boxes(base_img, report, orig_w, orig_h, str(run_path))
+                final_path = run_path / "final_composed.png"
+                base_img.save(final_path)
         
         # Extract editable regions
         text_regions, box_regions = extract_editable_regions(report)
@@ -322,7 +363,7 @@ async def process_image(file: UploadFile = File(...)):
             run_id=run_id,
             status="success",
             original_size={"width": orig_w, "height": orig_h},
-            background_url=f"/api/image/{run_id}/base_canvas.png",
+            background_url=f"/api/image/{run_id}/final_composed.png",  # Use final image
             text_regions=[TextRegion(**r) for r in text_regions],
             box_regions=[BoxRegion(**r) for r in box_regions]
         )
@@ -363,23 +404,24 @@ async def get_run(run_id: str):
     orig_w = report.get("original_size", {}).get("width", 1080)
     orig_h = report.get("original_size", {}).get("height", 1920)
     
-    # Check for base canvas
-    base_path = run_path / "base_canvas.png"
-    if not base_path.exists():
+    # Check for final composed image
+    final_path = run_path / "final_composed.png"
+    if not final_path.exists():
         # Create it if missing
         try:
             base_img = composite_layers(str(run_path), report)
             if base_img:
                 base_img = draw_background_boxes(base_img, report, orig_w, orig_h, str(run_path))
-                base_img.save(base_path)
-        except:
-            pass
+                final_img = render_text_layer(base_img.copy(), report)
+                final_img.save(final_path)
+        except Exception as e:
+            print(f"[WARNING] Failed to create final image in get_run: {e}")
     
     return {
         "run_id": run_id,
         "status": "success",
         "original_size": {"width": orig_w, "height": orig_h},
-        "background_url": f"/api/image/{run_id}/base_canvas.png",
+        "background_url": f"/api/image/{run_id}/final_composed.png",
         "text_regions": text_regions,
         "box_regions": box_regions
     }

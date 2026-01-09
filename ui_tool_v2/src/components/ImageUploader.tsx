@@ -25,9 +25,18 @@ export default function ImageUploader({
 
       try {
         const result = await processImage(file)
+        console.log('[DEBUG] Process result:', result)
+        
         if (result) {
+          console.log('[DEBUG] Text regions:', result.text_regions)
+          console.log('[DEBUG] Box regions:', result.box_regions)
+          console.log('[DEBUG] Background URL:', result.background_url)
           onProcessed(result)
+        } else {
+          console.error('[ERROR] Process returned null')
         }
+      } catch (error) {
+        console.error('[ERROR] Process failed:', error)
       } finally {
         setIsProcessing(false)
       }
