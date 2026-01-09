@@ -155,10 +155,8 @@ def extract_editable_regions(report: dict) -> tuple[List[dict], List[dict]]:
             print(f"[DEBUG] Region {region.get('id')} has role '{role}', skipping (not editable)")
             continue
         
-        # Skip residue
-        if region.get("layer_residue", False):
-            print(f"[DEBUG] Region {region.get('id')} is residue, skipping")
-            continue
+        # Note: We include residue regions for editing (they're on Layer 0 but still editable)
+        # The pipeline skips rendering them, but users should be able to edit them
         
         # For USP, only include if extracted
         if role == "usp":
