@@ -53,7 +53,7 @@ This project is ready for Streamlit Cloud.
 3. **Configuration**:
     - **Repository**: Select your repo.
     - **Branch**: `main` (or your branch).
-    - **Main file path**: `ui_tool/app.py` 👈 **IMPORTANT**
+    - **Main file path**: `ui_tool/app_p.py` 👈 **IMPORTANT**
 4. **Secrets**:
     - Go to "Advanced Settings" -> "Secrets".
     - Add your keys:
