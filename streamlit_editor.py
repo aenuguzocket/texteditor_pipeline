@@ -232,13 +232,17 @@ with st.sidebar:
         st.warning("pipeline_outputs directory not found.")
 
 # Main editor area
+# Initialize edited_regions to avoid NameError
+edited_regions = st.session_state.editor_data.get('edited_regions', {})
+
 if st.session_state.editor_data['report'] is None:
     st.info("👈 Load a pipeline run from the sidebar to start editing")
 else:
     editor_data = st.session_state.editor_data
     base_image = editor_data['base_image']
     regions = editor_data['text_regions']
-    edited_regions = editor_data['edited_regions']
+    # Get edited_regions from session state - this is our working copy
+    edited_regions = editor_data.get('edited_regions', {}).copy()
     
     # Two-column layout: Canvas and Controls
     col1, col2 = st.columns([2, 1])
@@ -343,6 +347,8 @@ else:
                 if rid not in edited_regions:
                     edited_regions[rid] = {}
                 edited_regions[rid]["text"] = new_text
+                # Update session state immediately
+                st.session_state.editor_data['edited_regions'] = edited_regions
             
             st.divider()
             
@@ -383,6 +389,8 @@ else:
                     edited_regions[rid] = {}
                 edited_regions[rid]["x"] = int(new_x)
                 edited_regions[rid]["y"] = int(new_y)
+                # Update session state
+                st.session_state.editor_data['edited_regions'] = edited_regions
                 st.rerun()
             
             # Size (with resize helper)
@@ -413,6 +421,8 @@ else:
                     edited_regions[rid] = {}
                 edited_regions[rid]["width"] = int(new_w)
                 edited_regions[rid]["height"] = int(new_h)
+                # Update session state
+                st.session_state.editor_data['edited_regions'] = edited_regions
                 st.rerun()
             
             st.divider()
@@ -429,6 +439,8 @@ else:
                 if rid not in edited_regions:
                     edited_regions[rid] = {}
                 edited_regions[rid]["font_name"] = new_font
+                # Update session state
+                st.session_state.editor_data['edited_regions'] = edited_regions
             
             current_weight = current_edits.get("font_weight", gemini.get("font_weight", 400))
             weight_options = [300, 400, 500, 600, 700, 800]
@@ -440,6 +452,8 @@ else:
                 if rid not in edited_regions:
                     edited_regions[rid] = {}
                 edited_regions[rid]["font_weight"] = new_weight
+                # Update session state
+                st.session_state.editor_data['edited_regions'] = edited_regions
             
             new_size = st.number_input("Font Size", value=current_edits.get("font_size", int(bbox["height"] * 0.7)),
                                       min_value=8, max_value=200, key=f"size_{rid}")
@@ -448,6 +462,8 @@ else:
                 if rid not in edited_regions:
                     edited_regions[rid] = {}
                 edited_regions[rid]["font_size"] = int(new_size)
+                # Update session state
+                st.session_state.editor_data['edited_regions'] = edited_regions
             
             st.divider()
             
@@ -460,6 +476,8 @@ else:
                 if rid not in edited_regions:
                     edited_regions[rid] = {}
                 edited_regions[rid]["color"] = new_color
+                # Update session state
+                st.session_state.editor_data['edited_regions'] = edited_regions
             
             st.divider()
             
@@ -467,6 +485,8 @@ else:
             if st.button("🔄 Reset Region", use_container_width=True, key=f"reset_{rid}"):
                 if rid in edited_regions:
                     del edited_regions[rid]
+                # Update session state
+                st.session_state.editor_data['edited_regions'] = edited_regions
                 st.rerun()
         
         else:
@@ -502,6 +522,8 @@ else:
         
         if st.button("🗑️ Clear All Edits", use_container_width=True):
             edited_regions.clear()
+            # Update session state
+            st.session_state.editor_data['edited_regions'] = edited_regions
             st.rerun()
         
         # Show edit summary
@@ -511,7 +533,8 @@ else:
             for rid, edits in edited_regions.items():
                 st.write(f"- Region {rid}: {len(edits)} property(ies) changed")
 
-# Auto-refresh on edits
-if edited_regions:
-    st.session_state.editor_data['edited_regions'] = edited_regions
+# Ensure edited_regions is always available in session state
+# (Already handled above with immediate updates, but this is a safety check)
+if st.session_state.editor_data['report'] is not None and 'edited_regions' not in st.session_state.editor_data:
+    st.session_state.editor_data['edited_regions'] = {}
 
