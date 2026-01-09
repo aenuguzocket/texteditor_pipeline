@@ -505,10 +505,10 @@ class CraftTextDetector:
             print("Merging close regions (line mode)...")
             polys = self._merge_close_regions(polys)
             
-            # FIX: Deterministic Vertical Split for Mixed Regions (Logo vs Heading)
-            # Post-process the merged lines to ensure we didn't accidentally merge distinct groups
-            print("Verifying region granularity (Vertical Projection Split)...")
-            polys = self._split_wide_regions(image_rgb, polys)
+            # V4.17 FIX: Disabled _split_wide_regions - causes incorrect word splits
+            # on thick blocked fonts by detecting inter-letter gaps as block separators
+            # print("Verifying region granularity (Vertical Projection Split)...")
+            # polys = self._split_wide_regions(image_rgb, polys)
 
 
         

@@ -440,7 +440,7 @@ def run_pipeline_layered(image_path_str: str, mock_layers_dir: str = None) -> st
 
 if __name__ == "__main__":
     # Test
-    IMAGE_PATH = r"image/IMAGE_CTA_BOX/Sparkling Family Joy.png"
-    MOCK_DIR = r"outputs/IMAGE_CTA_BOX/Sparkling Family Joy_v4_t"
+    IMAGE_PATH = r"image/IMAGE_CTA_BOX/Freedom to Move.png"
+    MOCK_DIR = r"outputs/IMAGE_CTA_BOX/Freedom to Move"
     run_pipeline_layered(IMAGE_PATH, MOCK_DIR)
     pass

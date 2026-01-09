@@ -168,7 +168,7 @@ def run_full_pipeline(input_path: str):
 
 if __name__ == "__main__":
     # --- CONFIGURATION: SET YOUR IMAGE PATH HERE ---
-    DEFAULT_INPUT = r"image/25f79b9d-14a7-4b8b-a5d3-8ffc0df47b10.png" 
+    DEFAULT_INPUT = r"image/t1.jpg" 
     # Example: "image/test_image.png" OR "pipeline_outputs/run_123..."
     
     target = None

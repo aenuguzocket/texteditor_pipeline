@@ -3,7 +3,7 @@ from streamlit_drawable_canvas import st_canvas
 from PIL import Image
 from pathlib import Path
 import json
-import backend # Local import
+import backend_p as backend # V4.17: Use backend_p for updated render_with_pipeline
 
 def main():
     st.set_page_config(layout="wide", page_title="Pipeline Interaction Test")
@@ -98,15 +98,21 @@ def main():
         st.error(f"Failed to load run data: {data.get('error')}")
         return
         
-    # Inject Fonts for Canvas
+    # Inject Fonts for Canvas (V4.18: WebFontLoader for proper Fabric.js rendering)
     if "fonts" in data and data["fonts"]:
-        font_faces = ""
-        for f in data["fonts"]:
-             safe_f = f.replace(" ", "+")
-             font_faces += f"@import url('https://fonts.googleapis.com/css2?family={safe_f}:wght@300;400;500;600;700;800;900&display=swap');\n"
+        font_families = data["fonts"]
         
-        if font_faces:
-            st.markdown(f"<style>{font_faces}</style>", unsafe_allow_html=True)
+        # Create WebFontLoader script that loads fonts BEFORE page renders
+        # This uses a blocking approach with CSS Font Loading API
+        font_css_links = ""
+        for f in font_families:
+            safe_f = f.replace(" ", "+")
+            font_css_links += f'<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family={safe_f}:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">'
+        
+        st.markdown(font_css_links, unsafe_allow_html=True)
+        
+        # Debug: Show which fonts are being loaded
+        st.caption(f"📝 Canvas Fonts: {', '.join(font_families)}")
         
     report = data["report"]
     bg_image = data["background_image"]
@@ -310,7 +316,8 @@ def main():
         for i, region in enumerate(text_regions):
             gemini = region.get("gemini_analysis", {})
             role = gemini.get("role", "body")
-            if role in ["product_text", "logo"]:
+            # V4.17 FIX: Match CLI filter - only render these roles
+            if role not in ["heading", "subheading", "body", "cta", "usp"]:
                 continue
                 
             rid = region.get("id", i)
@@ -327,6 +334,13 @@ def main():
             canvas_box_w = bbox["width"] * scale_x
             font_size = calculate_font_size(orig_text, canvas_box_h, canvas_box_w)
             
+            # Get font info from Gemini for Canvas rendering
+            canvas_font = gemini.get("primary_font", "sans-serif")
+            font_weight = gemini.get("font_weight", 400)
+            
+            # DEBUG: Print font info
+            print(f"[Canvas Debug] Region {rid}: font='{canvas_font}', weight={font_weight}")
+            
             base_objects.append({
                 "type": "textbox",
                 "u_id": f"text_{rid}", # Unique ID for matching
@@ -335,7 +349,8 @@ def main():
                 "top": bbox["y"] * scale_y,
                 "width": bbox["width"] * scale_x,
                 "fontSize": font_size,
-                "fontFamily": "sans-serif",
+                "fontFamily": canvas_font,  # V4.17: Use actual font from Gemini
+                "fontWeight": font_weight,   # V4.17: Apply font weight
                 "fill": color,
                 "backgroundColor": "transparent"
             })
@@ -350,15 +365,32 @@ def main():
         st.session_state.canvas_version = 0
         st.session_state.active_objects = base_objects # Initialize with defaults
         st.session_state.last_canvas_state = None
+    else:
+        # V4.17 FIX: Always sync fontFamily/fontWeight from base_objects to active_objects
+        # This fixes stale session state with wrong fonts
+        base_font_map = {obj.get("u_id"): obj for obj in base_objects if obj.get("type") == "textbox"}
+        for obj in st.session_state.active_objects:
+            if obj.get("type") == "textbox" and obj.get("u_id") in base_font_map:
+                base_obj = base_font_map[obj["u_id"]]
+                obj["fontFamily"] = base_obj.get("fontFamily", "sans-serif")
+                obj["fontWeight"] = base_obj.get("fontWeight", 400)
         
     # Manual Reset Button
-    if st.sidebar.button("Reset Layout"):
-        st.session_state.active_objects = base_objects
-        st.session_state.canvas_version += 1
-        st.session_state.last_canvas_state = None
-        st.success("Layout reset to defaults.")
-        # We need to rerun to reflect this immediately
-        st.rerun()
+    col_btn1, col_btn2 = st.sidebar.columns(2)
+    with col_btn1:
+        if st.button("Reset Layout"):
+            st.session_state.active_objects = base_objects
+            st.session_state.canvas_version += 1
+            st.session_state.last_canvas_state = None
+            st.success("Layout reset!")
+            st.rerun()
+    
+    with col_btn2:
+        # V4.18: Reload Fonts - Forces Canvas re-render AFTER fonts are loaded
+        if st.button("🔄 Reload Fonts"):
+            st.session_state.canvas_version += 1
+            st.toast("Canvas re-rendered with loaded fonts!", icon="🔄")
+            st.rerun()
 
     
     # ----------------------------------------------------
@@ -444,7 +476,7 @@ def main():
                      s_y = scale_y
                      
                      c_w = obj["width"] * obj.get("scaleX", 1)
-                     c_h = obj["height"] * obj.get("scaleY", 1)
+                     c_h = obj.get("height", obj.get("fontSize", 20) * 1.5) * obj.get("scaleY", 1)
                      c_left = obj["left"]
                      c_top = obj["top"]
                      
