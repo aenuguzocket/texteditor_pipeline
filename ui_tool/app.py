@@ -51,8 +51,8 @@ def main():
                 status_container.info("📦 Detecting Background Boxes...")
                 run_box_detection_pipeline(run_dir)
                 
-                # 3. Text Rendering (Auto-render so image appears immediately)
-                status_container.info("✏️ Rendering Text...")
+                # 3. Text Rendering (Auto-generate final_composed.png)
+                status_container.info("🎨 Rendering Final Image...")
                 backend.render_with_pipeline(run_dir)
                 
                 # 4. Complete
@@ -61,7 +61,7 @@ def main():
                 time.sleep(1)
                 status_container.empty()
                 
-                # 5. Auto-Select
+                # 4. Auto-Select
                 run_id = Path(run_dir).name.split("_")[1] # run_123_layered -> 123
                 # We need to refresh the list, backend.list_pipeline_runs() is called below
                 # Force reload by rerun
@@ -407,39 +407,9 @@ def main():
             bg_box = region.get("background_box", {})
             if role == "usp" and not bg_box.get("detected", False):
                  continue
-            
+                
             rid = region.get("id", i)
             orig_text = gemini.get("text", "")
-            
-            # Debug: Show what's being filtered
-            if i == 0:  # Only for first region to avoid spam
-                with st.sidebar.expander("📋 Region Filtering Debug", expanded=False):
-                    st.write(f"**Total Regions**: {len(text_regions)}")
-                    filter_summary = {"shown": [], "filtered": []}
-                    for r in text_regions:
-                        r_id = r.get("id")
-                        r_gemini = r.get("gemini_analysis", {})
-                        r_role = r_gemini.get("role", "body")
-                        r_text = r_gemini.get("text", "")[:20]
-                        
-                        # Apply same filtering logic
-                        if r.get("layer_residue", False):
-                            filter_summary["filtered"].append(f"R{r_id}: {r_role} - RESIDUE")
-                        elif r_role in ["product_text", "logo", "icon", "label", "ui_element"]:
-                            filter_summary["filtered"].append(f"R{r_id}: {r_role} - PROTECTED")
-                        elif r_role == "usp" and not r.get("background_box", {}).get("detected", False):
-                            filter_summary["filtered"].append(f"R{r_id}: USP - PRESERVED")
-                        else:
-                            filter_summary["shown"].append(f"R{r_id}: {r_role} - '{r_text}...'")
-                    
-                    st.markdown("**✅ Shown in Editor:**")
-                    for item in filter_summary["shown"]:
-                        st.write(f"  • {item}")
-                    
-                    st.markdown("**❌ Filtered Out:**")
-                    for item in filter_summary["filtered"]:
-                        st.write(f"  • {item}")
-
             
             # Text Input
             new_text = st.text_area(f"Text {rid} ({role})", value=orig_text, height=70)
@@ -665,53 +635,58 @@ def main():
     
     # --- CANVAS EDITOR (for positioning) ---
     st.markdown("---")
-    with st.expander("🔧 Advanced: Canvas Editor (for positioning)", expanded=True):
-        col1, col2 = st.columns([5, 1])
+    st.subheader("🔧 Interactive Canvas Editor")
+    
+    # Load final_composed.png as canvas background
+    canvas_bg_image = None
+    if final_composed_path and final_composed_path.exists():
+        canvas_bg_image = Image.open(final_composed_path)
+        # Resize to display dimensions
+        canvas_bg_image = canvas_bg_image.resize((int(img_display_width), int(img_display_height)), Image.Resampling.LANCZOS)
+    
+    col1, col2 = st.columns([5, 1])
+    
+    with col1:
+        # Dynamic Key to force update when needed
+        c_key = f"canvas_{selected_run_id}_v{st.session_state.canvas_version}"
         
-        with col1:
-            st.subheader("Interactive Editor")
-            # Dynamic Key to force update when needed
-            c_key = f"canvas_{selected_run_id}_v{st.session_state.canvas_version}"
+        canvas_result = st_canvas(
+            fill_color="rgba(255, 165, 0, 0.3)",
+            stroke_width=2,
+            stroke_color="#000000",
+            background_image=canvas_bg_image,  # Use pipeline-rendered image as background
+            update_streamlit=True,
+            height=int(img_display_height) if canvas_bg_image else canvas_height,
+            width=int(img_display_width) if canvas_bg_image else canvas_width,
+            drawing_mode="transform",
+            initial_drawing={"version": "4.4.0", "objects": []},  # No overlay objects, just show the image
+            key=c_key,
+        )
+        
+        # Save state for next run
+        if canvas_result.json_data:
+            st.session_state.last_canvas_state = canvas_result.json_data
             
-            # Note: background_image in st_canvas is broken in newer Streamlit versions
-            # The rendered result is shown in Pipeline Preview above
-            canvas_result = st_canvas(
-                fill_color="rgba(255, 165, 0, 0.3)",
-                stroke_width=2,
-                stroke_color="#000000",
-                background_color="#eeeeee",
-                update_streamlit=True,
-                height=canvas_height,
-                width=canvas_width,
-                drawing_mode="freedraw",
-                initial_drawing={"version": "4.4.0", "objects": []},
-                key=c_key,
-            )
+    with col2:
+        st.subheader("Data Inspector")
+        if canvas_result.json_data:
+            objects = canvas_result.json_data["objects"]
+            # Filter out the background image from inspector
+            editable_objects = [o for o in objects if o.get("type") != "image"]
             
-            # Save state for next run
-            if canvas_result.json_data:
-                st.session_state.last_canvas_state = canvas_result.json_data
-            
-        with col2:
-            st.subheader("Data Inspector")
-            if canvas_result.json_data:
-                objects = canvas_result.json_data["objects"]
-                # Filter out the background image from inspector
-                editable_objects = [o for o in objects if o.get("type") != "image"]
-                
-                st.write(f"Active Objects: {len(editable_objects)}")
-                # Show modified objects
-                for i, obj in enumerate(editable_objects):
-                    st.caption(f"Object {i} ({obj['type']})")
-                    st.json({
-                        "u_id": obj.get("u_id", "MISSING"),
-                        "text": obj.get("text", "N/A"),
-                        "left": int(obj["left"]),
-                        "top": int(obj["top"]),
-                        "width": int(obj["width"] * obj.get("scaleX", 1)),
-                        "height": int(obj["height"] * obj.get("scaleY", 1)),
-                        "fill": obj.get("fill", "N/A")
-                    })
+            st.write(f"Active Objects: {len(editable_objects)}")
+            # Show modified objects
+            for i, obj in enumerate(editable_objects):
+                st.caption(f"Object {i} ({obj['type']})")
+                st.json({
+                    "u_id": obj.get("u_id", "MISSING"),
+                    "text": obj.get("text", "N/A"),
+                    "left": int(obj["left"]),
+                    "top": int(obj["top"]),
+                    "width": int(obj["width"] * obj.get("scaleX", 1)),
+                    "height": int(obj["height"] * obj.get("scaleY", 1)),
+                    "fill": obj["fill"]
+                })
 
 if __name__ == "__main__":
     main()
