@@ -19,7 +19,6 @@ def main():
     try:
         from pipeline_v4.run_pipeline_layered_v4 import run_pipeline_layered
         from pipeline_v4.run_pipeline_box_detection_v4 import run_box_detection_pipeline
-        from pipeline_v4.rendering.google_fonts_runtime_loader import get_font_path
     except ImportError as e:
         st.error(f"Pipeline Import Error: {e}")
         return
@@ -102,65 +101,6 @@ def main():
     report = data["report"]
     bg_image = data["background_image"]
     
-    # --- INJECT GOOGLE FONTS CSS FOR BROWSER RENDERING ---
-    # Fabric.js canvas runs in the browser and needs fonts loaded via CSS, not server-side
-    text_regions = report.get("text_detection", {}).get("regions", [])
-    unique_fonts = {}  # font_name -> set of weights
-    for region in text_regions:
-        gemini = region.get("gemini_analysis", {})
-        if gemini:
-            font_name = gemini.get("primary_font", "Roboto")
-            font_weight = gemini.get("font_weight", 400)
-            if font_name not in unique_fonts:
-                unique_fonts[font_name] = set()
-            unique_fonts[font_name].add(font_weight)
-    
-    # Build Google Fonts URL
-    if unique_fonts:
-        font_specs = []
-        for font_name, weights in unique_fonts.items():
-            weight_str = ";".join([f"wght@{w}" for w in sorted(weights)])
-            family_encoded = font_name.replace(" ", "+")
-            font_specs.append(f"family={family_encoded}:wght@{','.join(map(str, sorted(weights)))}")
-        
-        google_fonts_url = f"https://fonts.googleapis.com/css2?{'&'.join(font_specs)}&display=swap"
-        
-        # Inject the font CSS
-        st.markdown(f'''
-        <link href="{google_fonts_url}" rel="stylesheet">
-        <style>
-            /* Force canvas text to use the correct fonts */
-            .canvas-container, canvas, .upper-canvas {{
-                font-family: inherit !important;
-            }}
-        </style>
-        ''', unsafe_allow_html=True)
-    # --- END FONT INJECTION ---
-    
-    # --- DEBUG PANEL ---
-    with st.sidebar.expander("🔍 Debug: Full JSON Report", expanded=False):
-        import json
-        st.json(report)
-        
-        st.markdown("---")
-        st.markdown("### Font Weight Summary")
-        text_regions = report.get("text_detection", {}).get("regions", [])
-        for region in text_regions:
-            rid = region.get("id", "?")
-            gemini = region.get("gemini_analysis", {})
-            if not gemini: continue
-            
-            role = gemini.get("role", "?")
-            text = gemini.get("text", "")[:30]
-            font = gemini.get("primary_font", "?")
-            weight = gemini.get("font_weight", "?")
-            residue = region.get("layer_residue", False)
-            
-            status = "🔴 RESIDUE" if residue else "🟢 OK"
-            st.markdown(f"**R{rid}** ({role}): `{font}` @ **{weight}** {status}")
-            st.caption(f"'{text}...'")
-    # --- END DEBUG ---
-    
     # 3. Canvas Config
     # Sidebar width override
     # 3. Canvas Config
@@ -198,70 +138,42 @@ def main():
     from io import BytesIO
     from PIL import ImageFont, ImageDraw
     import time # Imported for sleep above
-    import math
 
     def image_to_base64(img):
         buffered = BytesIO()
         img.save(buffered, format="PNG")
         return base64.b64encode(buffered.getvalue()).decode()
 
-    # Default fallback font path
-    DEFAULT_FONT = "Roboto-400.ttf"
-    FALLBACK_FONT_PATH = root_dir / "fonts" / DEFAULT_FONT
+    # Use a default font path that exists on Windows
+    FONT_PATH = "arial.ttf" 
 
-    def get_dynamic_font_path(font_name, font_weight):
-        """
-        Get the correct font file for the given font name and weight.
-        Falls back to bundled Roboto if Google Fonts fails.
-        """
+    def calculate_font_size(text, box_h, box_w):
+        low, high = 1, 500
+        best = 10 # Default minimum
+        target_h = box_h * 0.90 
+        target_w = box_w * 0.98 # Enforce width limit
+
         try:
-            return get_font_path(font_name, font_weight)
-        except Exception as e:
-            print(f"Font loading failed for {font_name}@{font_weight}: {e}")
-            return str(FALLBACK_FONT_PATH)
+             ImageFont.truetype(FONT_PATH, 10)
+        except:
+             return int(box_h * 0.5)
 
-    def calculate_font_size(text, box_h, box_w, font_path=None):
-        """
-        Calculate max font size where text fits in box (handling wrapping).
-        """
-        if not text: return 10
-        
-        low, high = 1, int(box_h)
-        best = 10
-        
-        # Optimization: Longest word width check (must fit horizontally)
-        words = text.split()
-        max_word = max(words, key=len) if words else text
-        
         while low <= high:
             mid = (low + high) // 2
             try:
-                font = ImageFont.truetype(str(font_path or FALLBACK_FONT_PATH), mid)
+                font = ImageFont.truetype(FONT_PATH, mid)
+                left, top, right, bottom = font.getbbox(text)
+                h = bottom - top
+                w = right - left
                 
-                # 1. Check if longest word fits width
-                # getlength is more accurate than getbbox for width
-                word_w = font.getlength(max_word)
-                if word_w > box_w:
-                    high = mid - 1
-                    continue
-                
-                # 2. Check total wrapping height
-                # Approximate lines = Total Text Width / Box Width
-                total_w = font.getlength(text)
-                num_lines = max(1, math.ceil(total_w / box_w))
-                
-                # Heuristic: Add 10% overflow buffer just in case
-                # Line height typically ~1.2 * font_size
-                required_h = num_lines * (mid * 1.3) 
-                
-                if required_h <= box_h:
+                # Check BOTH dimensions
+                if h <= target_h and w <= target_w:
                     best = mid
                     low = mid + 1
                 else:
                     high = mid - 1
             except:
                 break
-        
         return best
 
     # --- PREPARE BACKGROUND OBJECT ---
@@ -381,7 +293,6 @@ def main():
 
     # 3. Text Objects & Editor Form
     text_updates = {}
-    debug_shown = False
     
     st.sidebar.markdown("---")
     st.sidebar.subheader("")
@@ -389,20 +300,8 @@ def main():
         for i, region in enumerate(text_regions):
             gemini = region.get("gemini_analysis", {})
             role = gemini.get("role", "body")
-            
-            # V4.13 FIX: Skip if text is residue on background
-            if region.get("layer_residue", False):
+            if role in ["product_text", "logo"]:
                 continue
-            
-            # V4.12 FIX: Exclude Preserved/Protected roles from Editor
-            # Matches backend logic: IF preserved in BG, DO NOT allow editing/rendering on top
-            if role in ["product_text", "logo", "icon", "label", "ui_element"]:
-                continue
-            
-            # Hybrid USP: Only show if extracted
-            bg_box = region.get("background_box", {})
-            if role == "usp" and not bg_box.get("detected", False):
-                 continue
                 
             rid = region.get("id", i)
             orig_text = gemini.get("text", "")
@@ -416,82 +315,7 @@ def main():
             color = gemini.get("text_color", "#000000")
             canvas_box_h = bbox["height"] * scale_y
             canvas_box_w = bbox["width"] * scale_x
-            
-            # --- DEBUG INFO FOR FIRST TEXT (RE-ADDED) ---
-            if not debug_shown:
-                debug_shown = True
-                with st.sidebar.expander("🕵️‍♀️ Font Debug (First Region)", expanded=True):
-                    st.info(f"App Version: Wrapp-Aware Fix")
-                    
-                    st.write(f"**Font Path**: `{FALLBACK_FONT_PATH}`")
-                    st.write(f"**Exists**: `{FALLBACK_FONT_PATH.exists()}`")
-                    
-                    # Scaling Debug
-                    st.write("---")
-                    st.write(f"**Orig Img W**: {orig_w}")
-                    st.write(f"**Display W**: {img_display_width}")
-                    st.write(f"**Scale X**: {scale_x:.4f}")
-                    
-                    # Test Calculation
-                    try:
-                        test_font = ImageFont.truetype(str(FALLBACK_FONT_PATH), 10)
-                        st.success("Font loaded successfully!")
-                    except Exception as e:
-                        st.error(f"Font load failed: {e}")
-                    
-                    st.write("---")
-                    st.write(f"**Target Box**: {canvas_box_w:.1f}w x {canvas_box_h:.1f}h")
-                    st.write(f"**Text**: '{orig_text[:20]}...'")
-                    
-                    # Manual Calc Trace - Use Gemini's font
-                    debug_font_name = gemini.get("primary_font", "Roboto")
-                    debug_font_weight = gemini.get("font_weight", 400)
-                    debug_font_path = get_dynamic_font_path(debug_font_name, debug_font_weight)
-                    
-                    st.write(f"**Dynamic Font**: `{debug_font_name}@{debug_font_weight}`")
-                    st.write(f"**Font File**: `{debug_font_path}`")
-                    
-                    calc_size = calculate_font_size(orig_text, canvas_box_h, canvas_box_w, debug_font_path)
-                    st.write(f"-> **Calculated Size**: {calc_size}")
-                    
-                    # Check metrics at this size
-                    try:
-                        f = ImageFont.truetype(str(debug_font_path), calc_size)
-                        # Use getlength for width check as per new logic
-                        w = f.getlength(orig_text) # Single line estimation for debug
-                        
-                        # For height, we need the messy bbox
-                        l, t, r, b = f.getbbox(orig_text)
-                        h = b - t
-                        
-                        st.write(f"**Actual Text W**: {w:.1f}")
-                        st.write(f"**Actual Text H**: {h:.1f}")
-                        
-                        if w > 0:
-                            st.write(f"**Width Util**: {w/canvas_box_w*100:.1f}%")
-                        if h > 0:
-                            st.write(f"**Height Util**: {h/canvas_box_h*100:.1f}%")
-                            
-                        # Word Check
-                        words = orig_text.split()
-                        if words:
-                            max_word = max(words, key=len)
-                            mw_w = f.getlength(max_word)
-                            st.write(f"**Longest Word '{max_word}' W**: {mw_w:.1f}")
-                            if mw_w > canvas_box_w:
-                                st.error(f"⚠️ Word overflow! {mw_w:.1f} > {canvas_box_w:.1f}")
-                    except Exception as e:
-                        st.write(f"Metric Check Error: {e}")
-            # ---------------------------------
-            
-            # Get font info from Gemini analysis
-            font_name = gemini.get("primary_font", "Roboto")
-            font_weight = gemini.get("font_weight", 400)
-            
-            # Load the correct font dynamically
-            dynamic_font_path = get_dynamic_font_path(font_name, font_weight)
-            
-            font_size = calculate_font_size(orig_text, canvas_box_h, canvas_box_w, dynamic_font_path)
+            font_size = calculate_font_size(orig_text, canvas_box_h, canvas_box_w)
             
             base_objects.append({
                 "type": "textbox",
@@ -501,8 +325,7 @@ def main():
                 "top": bbox["y"] * scale_y,
                 "width": bbox["width"] * scale_x,
                 "fontSize": font_size,
-                "fontFamily": font_name,  # Use correct font family from Gemini
-                "fontWeight": font_weight,  # Pass weight for CSS rendering
+                "fontFamily": "sans-serif",
                 "fill": color,
                 "backgroundColor": "transparent"
             })
@@ -578,61 +401,8 @@ def main():
     
     final_drawing_objects = updated_objects
 
-    # --- PIPELINE PREVIEW (Shows actual rendered output) ---
-    st.subheader("🎨 Pipeline Preview")
     
-    run_dir = data.get("run_dir")
-    
-    # Check for existing final_composed.png
-    final_composed_path = Path(run_dir) / "final_composed.png" if run_dir else None
-    
-    # Create text updates dict from sidebar form
-    text_edit_updates = {}
-    for key, value in text_updates.items():
-        # Extract region ID from "text_1", "text_2" format
-        rid = key.replace("text_", "")
-        text_edit_updates[rid] = value
-    
-    col_preview, col_controls = st.columns([4, 1])
-    
-    with col_controls:
-        st.markdown("### Actions")
-        
-        # Re-render button
-        if st.button("🔄 Re-render with Edits", type="primary"):
-            if run_dir:
-                with st.spinner("Rendering with pipeline..."):
-                    rendered_img = backend.render_with_pipeline(run_dir, text_edit_updates)
-                    if rendered_img:
-                        st.success("✅ Rendered!")
-                        st.session_state.pipeline_preview_updated = True
-                        st.rerun()
-                    else:
-                        st.error("Rendering failed")
-            else:
-                st.error("No run directory found")
-        
-        # Download button
-        if final_composed_path and final_composed_path.exists():
-            with open(final_composed_path, "rb") as f:
-                st.download_button(
-                    label="📥 Download Final",
-                    data=f,
-                    file_name="final_composed.png",
-                    mime="image/png"
-                )
-    
-    with col_preview:
-        if final_composed_path and final_composed_path.exists():
-            # Show the actual pipeline-rendered image
-            st.image(str(final_composed_path), caption="Pipeline Output (final_composed.png)", use_container_width=True)
-        else:
-            st.warning("No final_composed.png found. Click 'Re-render with Edits' to generate.")
-    
-    # --- CANVAS EDITOR (for positioning) ---
-    st.markdown("---")
-    with st.expander("🔧 Advanced: Canvas Editor (for positioning)", expanded=False):
-        col1, col2 = st.columns([5, 1])
+    col1, col2 = st.columns([5, 1])
     
     with col1:
         st.subheader("Interactive Editor")

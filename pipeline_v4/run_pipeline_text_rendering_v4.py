@@ -170,16 +170,7 @@ def render_text_layer(base_image, report_data, scale_check=True):
              bg_box = region.get("background_box", {})
              if not bg_box.get("detected", False):
                  continue # Preserved in BG, do not render ghost
-        
-        # CTA FIX: Skip rendering text for CTAs with detected background boxes
-        # The extracted button image already has the text baked in
-        if role == "cta":
-            bg_box = region.get("background_box", {})
-            if bg_box.get("detected", False):
-                continue # Button image already has text, don't render on top
-        
-        # Only render these roles
-        if role not in ["heading", "subheading", "body", "cta"]:
+        elif role not in ["heading", "subheading", "body", "cta"]:
             continue
             
         if role not in role_groups:
