@@ -13,16 +13,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Support both .env and Streamlit secrets
 FAL_KEY = os.getenv("FAL_KEY")
-if not FAL_KEY:
-    try:
-        import streamlit as st
-        if hasattr(st, 'secrets') and "FAL_KEY" in st.secrets:
-            FAL_KEY = st.secrets["FAL_KEY"]
-    except (ImportError, AttributeError):
-        pass
-
 if not FAL_KEY:
     raise RuntimeError("FAL_KEY not found. Set it in .env or environment variables.")
 
