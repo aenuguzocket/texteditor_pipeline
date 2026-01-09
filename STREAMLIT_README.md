@@ -79,6 +79,8 @@ A web-based interface for the Image Text Removal & Editing Pipeline.
 
 ## Usage
 
+### Basic Pipeline
+
 1. **Upload Image**: Click "Browse files" and select an image (PNG, JPG, JPEG)
 2. **Run Pipeline**: Click "🚀 Run Pipeline" button
 3. **Wait for Processing**: Monitor progress in the progress bar
@@ -87,6 +89,28 @@ A web-based interface for the Image Text Removal & Editing Pipeline.
    - View individual layers
    - Check extracted background boxes
    - Download the final image
+
+### Canvas Editor (Advanced Editing)
+
+1. **Run the Editor**: 
+   ```bash
+   streamlit run streamlit_editor.py
+   ```
+
+2. **Load Pipeline Result**: 
+   - Select a pipeline run from the sidebar
+   - Click "Load Run" to load the data
+
+3. **Edit Text Elements**:
+   - **Select Region**: Choose a text region from the dropdown
+   - **Edit Text**: Change text content in the text area
+   - **Move**: Adjust X/Y position with number inputs or arrow buttons
+   - **Resize**: Change width/height or use resize buttons
+   - **Font**: Change font family, weight, and size
+   - **Color**: Pick a new text color
+   - **Preview**: See changes in real-time on the canvas
+
+4. **Save**: Click "Save Edited Image" to export your changes
 
 ## Output Structure
 

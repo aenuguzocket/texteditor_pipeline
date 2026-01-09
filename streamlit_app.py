@@ -234,6 +234,15 @@ with col2:
                     mime="image/png",
                     use_container_width=True
                 )
+            
+            # Link to editor
+            st.markdown("---")
+            st.info("💡 Want to edit text, move elements, or change fonts?")
+            st.write("**To edit your image:**")
+            st.write("1. Note the pipeline run directory above")
+            st.write("2. Run: `streamlit run streamlit_editor.py`")
+            st.write("3. Load the pipeline run in the editor")
+            st.code(f"Pipeline Run: {run_dir.name}", language="text")
         
         # Show pipeline report summary
         report_path = run_dir / "pipeline_report_with_boxes.json"
