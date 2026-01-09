@@ -98,6 +98,16 @@ def main():
         st.error(f"Failed to load run data: {data.get('error')}")
         return
         
+    # Inject Fonts for Canvas
+    if "fonts" in data and data["fonts"]:
+        font_faces = ""
+        for f in data["fonts"]:
+             safe_f = f.replace(" ", "+")
+             font_faces += f"@import url('https://fonts.googleapis.com/css2?family={safe_f}:wght@300;400;500;600;700;800;900&display=swap');\n"
+        
+        if font_faces:
+            st.markdown(f"<style>{font_faces}</style>", unsafe_allow_html=True)
+        
     report = data["report"]
     bg_image = data["background_image"]
     
@@ -350,6 +360,12 @@ def main():
         # We need to rerun to reflect this immediately
         st.rerun()
 
+    
+    # ----------------------------------------------------
+    # UPDATE BUTTON & ACTIONS
+    # ----------------------------------------------------
+    update_clicked = st.sidebar.button("Update & Re-render 🚀", type="primary", use_container_width=True)
+
     final_drawing_objects = st.session_state.active_objects
     
     # --- MERGE POSITIONS ON CLICK ---
@@ -359,53 +375,110 @@ def main():
         merged = []
         
         # Base schema is st.session_state.active_objects
-        # We assume strict index matching for now as established
         base_list = st.session_state.active_objects
         
-        if len(current_objects) == len(base_list):
-             for idx, base_obj in enumerate(base_list):
-                 curr_obj = current_objects[idx]
-                 
-                 # Verify Type
-                 if base_obj.get("type") != curr_obj.get("type"):
-                     # Fallback to base (don't merge mismatch)
-                     merged.append(base_obj)
-                     continue
-                 
-                 # Copy Positions from Canvas back to State
+        # Robust Merging: Match by u_id if possible
+        # Map current objects by u_id
+        curr_map = {o.get("u_id"): o for o in current_objects if o.get("u_id")}
+        
+        for base_obj in base_list:
+            uid = base_obj.get("u_id")
+            new_obj = base_obj.copy()
+            
+            if uid and uid in curr_map:
+                 curr_obj = curr_map[uid]
+                 # Copy Positions
                  preserved_props = ["left", "top", "width", "height", "scaleX", "scaleY", "angle"]
-                 new_obj = base_obj.copy()
                  for p in preserved_props:
                      if p in curr_obj:
                          new_obj[p] = curr_obj[p]
-                 
-                 merged.append(new_obj)
-             
-             st.session_state.active_objects = merged
-             st.session_state.canvas_version += 1
-             st.success(f"Positions synced! (v{st.session_state.canvas_version})")
-        else:
-             st.warning(f"Object mismatch ({len(current_objects)} vs {len(base_list)}). Update skipped to prevent data loss.")
+            
+            merged.append(new_obj)
+            
+        st.session_state.active_objects = merged
+        st.session_state.canvas_version += 1
+        st.success(f"Positions synced! (v{st.session_state.canvas_version})")
 
     # --- APPLY TEXT UPDATES (ALWAYS) ---
     updated_objects = []
+    final_text_updates = {} # Store for backend
     for obj in st.session_state.active_objects:
         obj_copy = obj.copy()
         uid = obj_copy.get("u_id")
         
         if uid and uid in text_updates and obj_copy["type"] == "textbox":
-             # Override text with whatever is in the sidebar text_area
+             # Use text from Sidebar Input (Priority)
              obj_copy["text"] = text_updates[uid]
+             
+             # Store for Backend
+             rid = uid.replace("text_", "")
+             final_text_updates[rid] = text_updates[uid]
         
         updated_objects.append(obj_copy)
     
     final_drawing_objects = updated_objects
+    
+    # ----------------------------------------------------
+    # PIPELINE PREVIEW & TRIGGER
+    # ----------------------------------------------------
+    st.markdown("### 🎨 Pipeline Preview")
+    preview_placeholder = st.empty()
+    
+    # Determine Path
+    run_dir = data.get("run_dir")
+    run_dir_path = Path(run_dir) if run_dir else None
+    
+    final_path = run_dir_path / "final_composed.png" if run_dir_path else None
+    
+    # 1. TRIGGER RE-RENDER
+    if update_clicked:
+         with st.spinner("Running Backend Pipeline (Rendering)..."):
+             # Calc BBox Updates
+             bbox_updates = {}
+             for obj in final_drawing_objects:
+                 if obj["type"] == "textbox":
+                     rid = obj["u_id"].replace("text_", "")
+                     
+                     # Canvas -> Original Conversion
+                     s_x = scale_x
+                     s_y = scale_y
+                     
+                     c_w = obj["width"] * obj.get("scaleX", 1)
+                     c_h = obj["height"] * obj.get("scaleY", 1)
+                     c_left = obj["left"]
+                     c_top = obj["top"]
+                     
+                     bbox_updates[rid] = {
+                         "x": int(c_left / s_x),
+                         "y": int(c_top / s_y),
+                         "width": int(c_w / s_x),
+                         "height": int(c_h / s_y)
+                     }
+             
+             # Call Backend
+             new_img = backend.render_with_pipeline(str(run_dir), final_text_updates, bbox_updates)
+             if new_img:
+                 st.toast("Pipeline Render Complete!", icon="✅")
+                 # Force reload image
+                 preview_placeholder.image(new_img, caption="Updated Pipeline Output", use_container_width=True)
+             else:
+                 st.error("Pipeline failed to render.")
+    
+    # 2. DEFAULT VIEW
+    elif final_path and final_path.exists():
+         # timestamp to bust cache if just updated
+         ts = int(time.time())
+         preview_placeholder.image(str(final_path), caption="Current Pipeline Output", use_container_width=True)
+    
+    st.markdown("---")
+    # Canvas follows below...
 
     
     col1, col2 = st.columns([5, 1])
     
     with col1:
         st.subheader("Interactive Editor")
+        st.caption("ℹ️ Note: Canvas mimics the layout but fonts are browser-approximations. See 'Pipeline Preview' above for the pixel-perfect final result.")
         # Dynamic Key to force update when needed
         c_key = f"canvas_{selected_run_id}_v{st.session_state.canvas_version}"
         

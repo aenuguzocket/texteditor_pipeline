@@ -5,9 +5,15 @@ from pathlib import Path
 from PIL import Image
 import cv2
 import numpy as np
+from dotenv import load_dotenv
 
 # Base path for pipeline outputs
 PIPELINE_OUTPUTS_DIR = Path("pipeline_outputs")
+
+# Force load .env from root
+root_env = Path(__file__).parent.parent / ".env"
+load_dotenv(root_env)
+print(f"[Backend] Env loaded. API Key present: {bool(os.getenv('GOOGLE_FONTS_API_KEY'))}")
 
 def list_pipeline_runs():
     """
@@ -117,11 +123,20 @@ def load_run_data(run_id):
         # V1 sometimes puts it differently? For now default to bg_image size if missing (Legacy)
         original_size = {"width": bg_image.width, "height": bg_image.height}
     
+    # Extract Fonts for Frontend Injection
+    fonts = set()
+    regions = report.get("text_detection", {}).get("regions", [])
+    for r in regions:
+        if "gemini_analysis" in r:
+            f = r["gemini_analysis"].get("primary_font")
+            if f: fonts.add(f)
+            
     return {
         "report": report,
         "background_image": bg_image,
         "original_size": original_size,
-        "run_dir": str(run_dir.resolve().absolute())
+        "run_dir": str(run_dir.resolve().absolute()),
+        "fonts": list(fonts)
     }
 
 def get_draggable_objects(report, canvas_width, canvas_height):
@@ -162,3 +177,128 @@ def get_draggable_objects(report, canvas_width, canvas_height):
         pass
 
     return text_regions
+
+def render_with_pipeline(run_dir, text_updates=None, bbox_updates=None):
+    """
+    Call the ACTUAL pipeline text rendering to produce final_composed.png.
+    Supports text updates and position (bbox) updates.
+    """
+    import sys
+    from pathlib import Path
+    
+    run_path = Path(run_dir)
+    
+    # Import pipeline functions
+    root_dir = run_path.parent.parent
+    if str(root_dir) not in sys.path:
+        sys.path.insert(0, str(root_dir))
+    
+    try:
+        from pipeline_v4.run_pipeline_text_rendering_v4 import (
+            composite_layers, 
+            draw_background_boxes, 
+            render_text_layer
+        )
+    except ImportError as e:
+        print(f"Pipeline import error: {e}")
+        return None
+    
+    # Load report
+    report_path = run_path / "pipeline_report_with_boxes.json"
+    if not report_path.exists():
+        report_path = run_path / "pipeline_report.json"
+    
+    if not report_path.exists():
+        print("Report not found")
+        return None
+    
+    with open(report_path, "r") as f:
+        report = json.load(f)
+    
+    regions = report.get("text_detection", {}).get("regions", [])
+
+    # V4.16 Data Fix: Normalize Font Weights (Str -> Int)
+    # This prevents "Thin" fallback if Gemini returns "Bold" string
+    for region in regions:
+        if "gemini_analysis" in region:
+            w = region["gemini_analysis"].get("font_weight", 400)
+            if isinstance(w, str):
+                w_lower = w.lower()
+                if "bold" in w_lower: w = 700
+                elif "light" in w_lower: w = 300
+                elif "medium" in w_lower: w = 500
+                elif "semi" in w_lower: w = 600
+                elif "black" in w_lower: w = 900
+                elif "regular" in w_lower: w = 400
+                else:
+                    try: 
+                        w = int(float(w))
+                    except: 
+                        w = 400
+            else:
+                try:
+                    w = int(w)
+                except:
+                    w = 400
+            region["gemini_analysis"]["font_weight"] = w
+
+    # 1. Apply Text Updates
+    if text_updates:
+        for region in regions:
+            rid = str(region.get("id"))
+            if rid in text_updates:
+                if "gemini_analysis" in region and region["gemini_analysis"]:
+                    region["gemini_analysis"]["text"] = text_updates[rid]
+
+    # 2. Apply Position Updates
+    if bbox_updates:
+        for region in regions:
+            rid = str(region.get("id"))
+            if rid in bbox_updates:
+                new_bbox = bbox_updates[rid]
+                old_bbox = region["bbox"]
+                
+                # Calculate movement delta
+                dx = new_bbox["x"] - old_bbox["x"]
+                dy = new_bbox["y"] - old_bbox["y"]
+                
+                # Update Text Box
+                region["bbox"] = new_bbox
+                
+                # Update Background Box (Sync movement)
+                bg_box = region.get("background_box", {})
+                if bg_box.get("detected") and "bbox" in bg_box:
+                    b_bbox = bg_box["bbox"]
+                    b_bbox["x"] += dx
+                    b_bbox["y"] += dy
+                    # Note: We don't update width/height of background box based on text resize 
+                    # because we don't know the new text size logic here easily. 
+                    # But simply moving it is 90% of the use case.
+    
+    # Get original dimensions
+    orig_size = report.get("original_size", {})
+    orig_w = orig_size.get("width", 1080)
+    orig_h = orig_size.get("height", 1920)
+    
+    # Execute pipeline rendering
+    print(f"[Backend Debug] CWD: {os.getcwd()}")
+    for region in regions:
+        if "gemini_analysis" in region:
+            g = region["gemini_analysis"]
+            print(f"[Backend Debug] R{region['id']}: Font='{g.get('primary_font')}' Weight={g.get('font_weight')}")
+
+    print("[Backend] Compositing layers...")
+    final_img = composite_layers(run_path, report)
+    
+    print("[Backend] Drawing background boxes...")
+    final_img = draw_background_boxes(final_img, report, orig_w, orig_h, run_path)
+    
+    print("[Backend] Rendering text layer...")
+    final_img = render_text_layer(final_img, report)
+    
+    # Save and return
+    out_path = run_path / "final_composed.png"
+    final_img.save(out_path)
+    print(f"[Backend] Saved: {out_path}")
+    
+    return final_img

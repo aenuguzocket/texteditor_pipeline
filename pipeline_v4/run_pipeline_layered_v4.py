@@ -54,9 +54,10 @@ def clean_layers(layer_paths, output_dir, global_craft_result, gemini_results, o
 
     # Roles configuration
     # Roles configuration
-    # V4.11 UPDATE: Added 'usp' to PRESERVE, removed valid 'hero_text'
-    PRESERVE_ROLES = ["product_text", "logo", "ui_element", "label", "icon", "usp"]
-    REMOVE_ROLES   = ["heading", "subheading", "body", "cta"]
+    # V4.15 UPDATE: 'usp' is REMOVED to prevent double-rendering (ghosting) inside boxes.
+    # We will FORCE render it in the rendering stage to handle floating USPs.
+    PRESERVE_ROLES = ["product_text", "logo", "ui_element", "label", "icon"]
+    REMOVE_ROLES   = ["heading", "subheading", "body", "cta", "usp"]
     
     # Initialize detector for LOCAL PIXEL GATING
     # CRITICAL: merge_lines=False
@@ -253,6 +254,9 @@ def run_pipeline_layered(image_path_str: str, mock_layers_dir: str = None) -> st
     # ------------------------------------------------------------------
     # STEP 1: CRAFT
     # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # STEP 1: CRAFT
+    # ------------------------------------------------------------------
     print("\n[STEP 1] Running CRAFT (Global)...")
     detector = CraftTextDetector(cuda=False, merge_lines=True, link_threshold=0.2, text_threshold=0.6, low_text=0.35)
     craft_result = detector.detect(str(image_path))
@@ -268,25 +272,80 @@ def run_pipeline_layered(image_path_str: str, mock_layers_dir: str = None) -> st
             f.write(base64.b64decode(b64))
 
     # ------------------------------------------------------------------
-    # STEP 2: Gemini
+    # PARALLEL EXECUTION: STEP 2 (Gemini) & STEP 3 (Qwen)
     # ------------------------------------------------------------------
-    print("\n[STEP 2] Running Gemini Analysis...")
-    crop_files = sorted(list(crops_dir.glob("*.png")))
+    print("\n[STEP 2 & 3] Running Gemini & Qwen in PARALLEL...")
+    
     gemini_results = []
-    if crop_files:
-        crop_paths_str = [str(p) for p in crop_files]
-        try:
-            analysis_list = analyze_text_crops_batch(crop_paths_str)
-            count = min(len(crop_files), len(analysis_list))
-            for i in range(count):
-                crop = crop_files[i]
-                gemini_results.append({
-                    "region_id": crop.stem.split("_")[-1],
-                    "analysis": analysis_list[i]
-                })
-        except Exception as e:
-            print(f"Gemini failed: {e}")
+    layer_paths = []
+    
+    import concurrent.futures
 
+    # -- Task Functions --
+    layers_dir = run_dir / "layers"
+    layers_dir.mkdir(parents=True, exist_ok=True)
+    
+    def run_gemini_task():
+        print("  [Gemini] Starting Analysis...")
+        crop_files = sorted(list(crops_dir.glob("*.png")))
+        results = []
+        if crop_files:
+            crop_paths_str = [str(p) for p in crop_files]
+            try:
+                analysis_list = analyze_text_crops_batch(crop_paths_str)
+                count = min(len(crop_files), len(analysis_list))
+                for i in range(count):
+                    crop = crop_files[i]
+                    results.append({
+                        "region_id": crop.stem.split("_")[-1],
+                        "analysis": analysis_list[i]
+                    })
+                print("  [Gemini] Analysis Complete.")
+            except Exception as e:
+                print(f"  [Gemini] Failed: {e}")
+        else:
+            print("  [Gemini] No crops to analyze.")
+        
+        # refinement logic
+        return results
+
+    def run_qwen_task():
+        print("  [Qwen] Starting Layer Generation...")
+        # layers_dir is available from outer scope
+        paths = []
+        
+        if mock_layers_dir and Path(mock_layers_dir).exists():
+            print(f"  [Qwen] Using mock layers from: {mock_layers_dir}")
+            import shutil
+            mock_path = Path(mock_layers_dir)
+            for f in sorted(mock_path.glob("*.png")):
+                dest = layers_dir / f.name
+                shutil.copy2(f, dest)
+                paths.append(str(dest))
+        else:
+            # REAL CALL
+            try:
+                paths = run_qwen_layered(str(image_path), layers_dir)
+                print("  [Qwen] Generation Complete.")
+            except Exception as e:
+                print(f"  [Qwen] Failed: {e}")
+        
+        return paths
+
+    # -- Parallel Execution --
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        future_gemini = executor.submit(run_gemini_task)
+        future_qwen = executor.submit(run_qwen_task)
+        
+        # Wait for results
+        try:
+            gemini_results = future_gemini.result()
+            layer_paths = future_qwen.result()
+        except Exception as e:
+            print(f"Parallel Execution Error: {e}")
+            raise e
+
+    # --- Post-Processing Gemini Results (Logo Refinement) ---
     # V4.7 REFINEMENT: Logo Proximity Protection
     def refine_logo_roles(regions, g_map):
         logo_ids = []
@@ -323,41 +382,9 @@ def run_pipeline_layered(image_path_str: str, mock_layers_dir: str = None) -> st
         for res in gemini_results:
             rid = str(res["region_id"])
             if rid in fixed_map: res["analysis"] = fixed_map[rid]
-
-    # ------------------------------------------------------------------
-    # STEP 3: Qwen Layering
-    # ------------------------------------------------------------------
-    print("\n[STEP 3] Generating Layers...")
-    layers_dir = run_dir / "layers"
-    layers_dir.mkdir(parents=True, exist_ok=True)
     
-    layer_paths = []
-    
-    if mock_layers_dir and Path(mock_layers_dir).exists():
-        print(f"Using pre-generated layers from: {mock_layers_dir}")
-        import shutil
-        mock_path = Path(mock_layers_dir)
-        for f in sorted(mock_path.glob("*.png")):
-            dest = layers_dir / f.name
-            shutil.copy2(f, dest)
-            layer_paths.append(str(dest))
-            print(f"  > Copied layer: {dest}")
-    else:
-        # REAL CALL
-        print("Running Qwen AI for layering...")
-        try:
-            saved_paths = run_qwen_layered(str(image_path), layers_dir)
-            layer_paths = saved_paths
-        except Exception as e:
-             print(f"Qwen Failed: {e}")
-             # Create dummy layer 0 so pipeline doesn't crash completely
-             dummy_path = layers_dir / "0_layer_0.png"
-             import shutil
-             shutil.copy2(str(image_path), dummy_path)
-             layer_paths = [str(dummy_path)]
-
     # ------------------------------------------------------------------
-    # STEP 4: Layer Cleaning
+    # STEP 4: CLEAN LAYERS
     # ------------------------------------------------------------------
     print("\n[STEP 4] Cleaning Layers (Layer-Aware Pixel Erasure)...")
     orig_img = cv2.imread(str(image_path))

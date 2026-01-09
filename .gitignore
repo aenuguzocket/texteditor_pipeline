@@ -34,3 +34,12 @@ json_files/
 # Fonts
 fonts/
 pipeline_v2/rendering/fonts/
+
+# Node modules and build artifacts
+node_modules/
+.vite/
+uploads/
+
+# Temporary files
+*.tmp
+fix_fonts.py

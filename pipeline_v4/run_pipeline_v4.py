@@ -1,19 +1,8 @@
 """
-Combined Pipeline Stage 2 & 3 (V4)
+Combined Pipeline V4 (End-to-End)
 ==================================
-Combines Box Detection and Text Rendering into a single execution flow.
-Usage: python run_pipeline_v4.py <RUN_ID_OR_DIR>
-
-Stages:
-1. Box Detection (run_pipeline_box_detection_v4.py)
-   - Detects background boxes for CTA regions
-   - Updates pipeline_report.json -> pipeline_report_with_boxes.json
-
-2. Text Rendering (run_pipeline_text_rendering_v4.py)
-   - Composites cleaned layers
-   - Composites extracted background boxes
-   - Renders text with dynamic sizing and alignment
-   - Saves final_composed.png
+Runs the full pipeline from Layering -> Box Detection -> Text Rendering.
+Can take either an Image Path (starts fresh) or a Run Directory (resumes).
 """
 
 import os
@@ -29,13 +18,14 @@ from PIL import Image
 current_dir = Path(__file__).parent
 sys.path.append(str(current_dir))
 
-# Add 'rendering' to path for font loader (required by text rendering module)
+# Add 'rendering' to path for font loader
 sys.path.append(os.path.join(os.path.dirname(__file__), "rendering"))
 
 # -----------------------------------------------------------------------------
 # IMPORTS
 # -----------------------------------------------------------------------------
 try:
+    from run_pipeline_layered_v4 import run_pipeline_layered
     from run_pipeline_box_detection_v4 import run_box_detection_pipeline
     from run_pipeline_text_rendering_v4 import (
         composite_layers, 
@@ -44,42 +34,70 @@ try:
     )
 except ImportError as e:
     print(f"Error importing pipeline modules: {e}")
-    print("Ensure run_pipeline_box_detection_v4.py and run_pipeline_text_rendering_v4.py are in the same directory.")
+    print("Ensure all v4 pipeline scripts are in the same directory.")
     sys.exit(1)
 
 # -----------------------------------------------------------------------------
 # MAIN PIPELINE LOGIC
 # -----------------------------------------------------------------------------
 
-def run_pipeline_v4(run_dir: str):
+def run_full_pipeline(input_path: str):
     """
-    Executes the combined Stage 2 (Box Detection) and Stage 3 (Rendering) pipeline.
+    Executes the COMPLETE pipeline sequence.
     """
-    run_path = Path(run_dir)
-    if not run_path.exists():
-        print(f"Error: Run directory not found: {run_dir}")
+    path_obj = Path(input_path)
+    run_dir = None
+    
+    # ---------------------------------------------------------
+    # STAGE 1: LAYERING & ANALYSIS
+    # ---------------------------------------------------------
+    if path_obj.is_file() and path_obj.suffix.lower() in ['.png', '.jpg', '.jpeg']:
+        print(f"\n************************************************************")
+        print(f"STAGE 1: STARTING LAYERING PIPELINE")
+        print(f"Input Image: {input_path}")
+        print(f"************************************************************")
+        
+        try:
+            # run_pipeline_layered returns the new run directory
+            run_dir = run_pipeline_layered(str(path_obj))
+            print(f"Stage 1 Complete. Run Directory: {run_dir}")
+        except Exception as e:
+            print(f"!! CRITICAL: Stage 1 Failed: {e}")
+            import traceback
+            traceback.print_exc()
+            return
+            
+    elif path_obj.is_dir() and "run_" in path_obj.name:
+        print(f"\n[INFO] Resuming from existing run directory: {path_obj}")
+        run_dir = str(path_obj)
+        
+    else:
+        print(f"Error: Invalid input. Must be an image file (.png/.jpg) or a run directory.")
         return
 
-    print(f"\n************************************************************")
-    print(f"STARTING COMBINED PIPELINE V4")
-    print(f"Target: {run_dir}")
-    print(f"************************************************************")
+    if not run_dir:
+        print("Error: No valid run directory established.")
+        return
 
     # ---------------------------------------------------------
     # STAGE 2: BOX DETECTION
     # ---------------------------------------------------------
-    print("\n>>> STAGE 2: Running Box Detection...")
+    print(f"\n************************************************************")
+    print(f"STAGE 2: BOX DETECTION")
+    print(f"************************************************************")
     try:
-        run_box_detection_pipeline(str(run_path))
+        run_box_detection_pipeline(run_dir)
     except Exception as e:
         print(f"!! Box Detection Failed: {e}")
-        # We might continue if report exists, but usually this is fatal for the combined flow
-        # However, rendering handles missing boxes gracefully.
     
     # ---------------------------------------------------------
     # STAGE 3: TEXT RENDERING
     # ---------------------------------------------------------
-    print("\n>>> STAGE 3: Running Text Rendering...")
+    print(f"\n************************************************************")
+    print(f"STAGE 3: TEXT RENDERING")
+    print(f"************************************************************")
+    
+    run_path = Path(run_dir)
     
     # Load the updated report
     report_with_boxes = run_path / "pipeline_report_with_boxes.json"
@@ -100,11 +118,11 @@ def run_pipeline_v4(run_dir: str):
     orig_w, orig_h = 1080, 1920  # Fallback
     
     if input_filename:
-        # Check standard locations
+        # Try to resolve absolute path of input image
         possible_paths = [
-            Path("image") / input_filename,
-            Path(run_dir).parent.parent / "image" / input_filename, # ../../image
-            Path("c:/Users/harsh/Downloads/zocket/product_pipeline/image") / input_filename # Absolute fallback based on known paths
+            Path(input_filename),
+            Path(run_dir).parent.parent / "image" / Path(input_filename).name,
+            Path("c:/Users/harsh/Downloads/zocket/product_pipeline/image") / Path(input_filename).name
         ]
         
         for p in possible_paths:
@@ -112,22 +130,25 @@ def run_pipeline_v4(run_dir: str):
                 try:
                     with Image.open(p) as orig_img:
                         orig_w, orig_h = orig_img.size
-                    print(f"Original image size detected: {orig_w}x{orig_h} (from {p})")
+                    print(f"Original image size detected: {orig_w}x{orig_h}")
                     break
                 except:
                     continue
     
     try:
         # 1. Composite Layers
-        final_img = composite_layers(str(run_path), report)
+        print(" -> Compositing layers...")
+        final_img = composite_layers(run_dir, report)
         if final_img is None:
             print("Error: Failed to composite layers.")
             return
 
         # 2. Composite Background Boxes (CTAs)
-        final_img = draw_background_boxes(final_img, report, orig_w, orig_h, str(run_path))
+        print(" -> Drawing background boxes...")
+        final_img = draw_background_boxes(final_img, report, orig_w, orig_h, run_dir)
 
         # 3. Render Text
+        print(" -> Rendering text...")
         final_img = render_text_layer(final_img, report)
 
         # 4. Save Final Output
@@ -146,28 +167,21 @@ def run_pipeline_v4(run_dir: str):
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    # Default to the most recent run ID edited by the user if no arg provided
-    DEFAULT_RUN_ID = "run_1767874217_layered" 
-    DEFAULT_BASE_DIR = Path("pipeline_outputs") / DEFAULT_RUN_ID
+    # --- CONFIGURATION: SET YOUR IMAGE PATH HERE ---
+    DEFAULT_INPUT = r"image/25f79b9d-14a7-4b8b-a5d3-8ffc0df47b10.png" 
+    # Example: "image/test_image.png" OR "pipeline_outputs/run_123..."
     
-    target_dir = str(DEFAULT_BASE_DIR)
+    target = None
     
-    # CLI Argument Override
     if len(sys.argv) > 1:
-        # Check if arg is a full path or just a run ID
-        arg_path = Path(sys.argv[1])
-        if arg_path.exists():
-            target_dir = str(arg_path)
-        else:
-            # Try appending to pipeline_outputs
-            potential_dir = Path("pipeline_outputs") / sys.argv[1]
-            if potential_dir.exists():
-                target_dir = str(potential_dir)
-            else:
-                print(f"Warning: Provided path {sys.argv[1]} not found. Using default {DEFAULT_RUN_ID}")
-
-    if not Path(target_dir).exists():
-         print(f"Critical: Target directory {target_dir} does not exist.")
-         sys.exit(1)
-
-    run_pipeline_v4(target_dir)
+        target = sys.argv[1]
+    else:
+        # Use default if no arg provided
+        target = DEFAULT_INPUT
+        if "YOUR_IMAGE_HERE" in target:
+            print("Usage: python run_pipeline_v4.py <IMAGE_PATH_OR_RUN_DIR>")
+            print(f"OR update 'DEFAULT_INPUT' in {__file__}")
+            sys.exit(1)
+            
+    print(f"Running pipeline on: {target}")
+    run_full_pipeline(target)
