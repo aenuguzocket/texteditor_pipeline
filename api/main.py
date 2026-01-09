@@ -43,7 +43,7 @@ load_dotenv(API_DIR / ".env")
 # Import pipeline modules
 try:
     from pipeline_v4.run_pipeline_layered_v4 import run_pipeline_layered
-    from pipeline_v4.run_pipeline_box_detection_v4 import run_box_detection_pipeline
+    from pipeline_v4.run_pipeline_v4 import run_pipeline_v4
     from pipeline_v4.run_pipeline_text_rendering_v4 import (
         composite_layers,
         draw_background_boxes,
@@ -307,66 +307,54 @@ async def process_image(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save file: {e}")
     
-    # Run pipeline Stage 1: Layered pipeline
-    try:
-        run_dir = run_pipeline_layered(str(upload_path), mock_layers_dir=None)
-        
-        if not run_dir or not Path(run_dir).exists():
-            raise Exception("Pipeline Stage 1 failed")
-        
-        # Run pipeline Stage 2: Box detection
-        run_box_detection_pipeline(run_dir)
-        
-        # Load report
-        run_path = Path(run_dir)
-        report_with_boxes = run_path / "pipeline_report_with_boxes.json"
-        report_orig = run_path / "pipeline_report.json"
-        report_file = report_with_boxes if report_with_boxes.exists() else report_orig
-        
-        if not report_file.exists():
-            raise Exception("Pipeline report not found")
-        
-        with open(report_file, "r") as f:
-            report = json.load(f)
-        
-        # Get original dimensions
-        orig_w = report.get("original_size", {}).get("width", 1080)
-        orig_h = report.get("original_size", {}).get("height", 1920)
-        
-        # Create final composed image (with text rendered) for canvas background
+        # Run pipeline Stage 1: Layered pipeline
         try:
-            base_img = composite_layers(str(run_path), report)
-            if base_img:
-                base_img = draw_background_boxes(base_img, report, orig_w, orig_h, str(run_path))
-                # Render text to create final image
-                final_img = render_text_layer(base_img.copy(), report)
-                final_path = run_path / "final_composed.png"
-                final_img.save(final_path)
-                print(f"[DEBUG] Saved final_composed.png to {final_path}")
-        except Exception as e:
-            print(f"[WARNING] Failed to create final image: {e}")
-            import traceback
-            traceback.print_exc()
-            # Fallback to base image
-            base_img = composite_layers(str(run_path), report)
-            if base_img:
-                base_img = draw_background_boxes(base_img, report, orig_w, orig_h, str(run_path))
-                final_path = run_path / "final_composed.png"
-                base_img.save(final_path)
-        
-        # Extract editable regions
-        text_regions, box_regions = extract_editable_regions(report)
-        
-        run_id = run_path.name
-        
-        return ProcessResponse(
-            run_id=run_id,
-            status="success",
-            original_size={"width": orig_w, "height": orig_h},
-            background_url=f"/api/image/{run_id}/final_composed.png",  # Use final image
-            text_regions=[TextRegion(**r) for r in text_regions],
-            box_regions=[BoxRegion(**r) for r in box_regions]
-        )
+            run_dir = run_pipeline_layered(str(upload_path), mock_layers_dir=None)
+            
+            if not run_dir or not Path(run_dir).exists():
+                raise Exception("Pipeline Stage 1 failed")
+            
+            # Run pipeline Stage 2 & 3: Box detection + Text rendering (using proper wrapper)
+            # This ensures the exact same logic as the command-line pipeline
+            run_pipeline_v4(run_dir)
+            
+            # Load report (with boxes)
+            run_path = Path(run_dir)
+            report_with_boxes = run_path / "pipeline_report_with_boxes.json"
+            report_orig = run_path / "pipeline_report.json"
+            report_file = report_with_boxes if report_with_boxes.exists() else report_orig
+            
+            if not report_file.exists():
+                raise Exception("Pipeline report not found")
+            
+            with open(report_file, "r") as f:
+                report = json.load(f)
+            
+            # Get original dimensions
+            orig_w = report.get("original_size", {}).get("width", 1080)
+            orig_h = report.get("original_size", {}).get("height", 1920)
+            
+            # Verify final_composed.png exists (created by run_pipeline_v4)
+            final_path = run_path / "final_composed.png"
+            if not final_path.exists():
+                print(f"[WARNING] final_composed.png not found, pipeline may have failed")
+                raise Exception("Final composed image not created by pipeline")
+            
+            print(f"[DEBUG] Using final_composed.png from pipeline: {final_path}")
+            
+            # Extract editable regions
+            text_regions, box_regions = extract_editable_regions(report)
+            
+            run_id = run_path.name
+            
+            return ProcessResponse(
+                run_id=run_id,
+                status="success",
+                original_size={"width": orig_w, "height": orig_h},
+                background_url=f"/api/image/{run_id}/final_composed.png",
+                text_regions=[TextRegion(**r) for r in text_regions],
+                box_regions=[BoxRegion(**r) for r in box_regions]
+            )
         
     except Exception as e:
         import traceback
@@ -407,15 +395,14 @@ async def get_run(run_id: str):
     # Check for final composed image
     final_path = run_path / "final_composed.png"
     if not final_path.exists():
-        # Create it if missing
+        # Run the proper pipeline to create it
+        print(f"[INFO] final_composed.png not found, running pipeline_v4 to create it...")
         try:
-            base_img = composite_layers(str(run_path), report)
-            if base_img:
-                base_img = draw_background_boxes(base_img, report, orig_w, orig_h, str(run_path))
-                final_img = render_text_layer(base_img.copy(), report)
-                final_img.save(final_path)
+            run_pipeline_v4(str(run_path))
         except Exception as e:
             print(f"[WARNING] Failed to create final image in get_run: {e}")
+            import traceback
+            traceback.print_exc()
     
     return {
         "run_id": run_id,
@@ -459,33 +446,31 @@ async def render_image(request: RenderRequest):
     if not run_path.exists():
         raise HTTPException(status_code=404, detail=f"Run not found: {request.run_id}")
     
-    # Load base image
-    base_path = run_path / "base_canvas.png"
-    if not base_path.exists():
-        # Try to recreate
-        report_file = run_path / "pipeline_report_with_boxes.json"
-        if not report_file.exists():
-            report_file = run_path / "pipeline_report.json"
-        
-        if report_file.exists():
-            with open(report_file, "r") as f:
-                report = json.load(f)
-            
-            orig_w = report.get("original_size", {}).get("width", 1080)
-            orig_h = report.get("original_size", {}).get("height", 1920)
-            
-            base_img = composite_layers(str(run_path), report)
-            if base_img:
-                base_img = draw_background_boxes(base_img, report, orig_w, orig_h, str(run_path))
-                base_img.save(base_path)
+    # Load report to get base image
+    report_file = run_path / "pipeline_report_with_boxes.json"
+    if not report_file.exists():
+        report_file = run_path / "pipeline_report.json"
     
-    if not base_path.exists():
-        raise HTTPException(status_code=500, detail="Base image not found")
+    if not report_file.exists():
+        raise HTTPException(status_code=404, detail="Pipeline report not found")
+    
+    with open(report_file, "r") as f:
+        report = json.load(f)
+    
+    orig_w = report.get("original_size", {}).get("width", 1080)
+    orig_h = report.get("original_size", {}).get("height", 1920)
     
     try:
-        base_img = Image.open(base_path).convert("RGBA")
+        # Create base image: cleaned layers + extracted boxes (without text)
+        # This matches the pipeline logic exactly
+        base_img = composite_layers(str(run_path), report)
+        if not base_img:
+            raise Exception("Failed to composite layers")
         
-        # Render with edits
+        # Add extracted background boxes (these already have text filled with box color)
+        base_img = draw_background_boxes(base_img, report, orig_w, orig_h, str(run_path))
+        
+        # Now render custom text and boxes on top
         final_img = render_custom_image(
             base_img,
             request.text_regions,
