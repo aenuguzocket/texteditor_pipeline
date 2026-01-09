@@ -28,13 +28,17 @@ from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
 
 # Add pipeline paths
-ROOT_DIR = Path(__file__).parent.parent
+API_DIR = Path(__file__).parent
+ROOT_DIR = API_DIR.parent
+
+# Add paths for imports
 sys.path.insert(0, str(ROOT_DIR))
 sys.path.insert(0, str(ROOT_DIR / "pipeline_v4"))
 sys.path.insert(0, str(ROOT_DIR / "pipeline_v4" / "rendering"))
 
-# Load environment variables
+# Load environment variables (try both locations)
 load_dotenv(ROOT_DIR / ".env")
+load_dotenv(API_DIR / ".env")
 
 # Import pipeline modules
 try:
@@ -492,4 +496,5 @@ async def get_image(run_id: str, filename: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    # Run without reload to avoid module path issues
+    uvicorn.run(app, host="0.0.0.0", port=8000)
